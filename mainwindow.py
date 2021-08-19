@@ -12,7 +12,6 @@ import requests
 import pdf2image
 import pdf2image.exceptions
 
-
 class PrintLabelException(Exception): pass
 
 
@@ -134,7 +133,6 @@ class MainWindow(QMainWindow):
                 raise PrintLabelException(response.json().get('errors')[0].get('error'))
 
             pages = pdf2image.convert_from_bytes(data, self.__printer.resolution())
-            pages[0].save('data/out.jpg', 'JPEG')
             img_bytes = io.BytesIO()
             pages[0].save(img_bytes, format='JPEG')
             img_bytes = img_bytes.getvalue()
