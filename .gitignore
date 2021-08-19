@@ -1,6 +1,7 @@
 
-/venv/*
-/.idea/*
-/data/*
+venv
+.idea
+data
+__pycache__
 
 settings.ini
