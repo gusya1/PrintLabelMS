@@ -1,0 +1,4 @@
+pdf2image>=1.16.0
+fs_moysklad_api>=0.5.1
+requests>=2.26.0
+PyQt5>=5.15.4
