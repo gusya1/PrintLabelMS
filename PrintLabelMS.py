@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 import sys
 from MainWindow import MainWindow, LabelFormat, PrintLabelException
 from MSApi.MSApi import MSApi, MSApiException
@@ -11,27 +11,21 @@ def fatal_error(message):
     exit()
 
 
-async def show_progress():
-    progress_dialog = QtWidgets.QProgressDialog("Initialized", None, 0, 3, None)
-    progress_dialog.setAutoClose(True)
-    progress_dialog.exec()
-
-
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     try:
         if len(app.arguments()) != 2:
             fatal_error("Invalid arguments.\nUsage: python3 MapGenerator <settings_file>")
 
-        # asyncio.run(show_progress())
+        splash = QtWidgets.QSplashScreen(QtGui.QPixmap("pictures/snm_logo.png"))
+        splash.showMessage("Initialisation...")
+        splash.show()
 
         config_path = app.arguments()[1]
 
         window = MainWindow(config_path)
-        # MainWindow.set_print_resolution(int(config['printer']['resolution']))
-
-
         window.show()
+        splash.finish(window)
         app.exec()
 
     except PrintLabelException as e:
