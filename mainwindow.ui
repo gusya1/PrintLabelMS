@@ -84,13 +84,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkRotate90">
-        <property name="text">
-         <string>Rolate 90</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>

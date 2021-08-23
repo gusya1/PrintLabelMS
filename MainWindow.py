@@ -1,8 +1,11 @@
+import configparser
+
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtCore import QSizeF, QByteArray
 from PyQt5.QtGui import QPainter, QPixmap, QPageLayout
+from enum import Enum
 
 import re
 
@@ -16,7 +19,7 @@ class PrintLabelException(Exception):
 
 
 class LabelFormat(object):
-    str_rx = re.compile(r'(\d+)x(\d+) +\((\d+),(\d+),(\d+),(\d+)\)')
+    str_rx = re.compile(r'(\d+)x(\d+) +\((-?\d+),(-?\d+)\) ([LP])')
 
     @classmethod
     def from_str(cls, string: str):
@@ -25,29 +28,27 @@ class LabelFormat(object):
             raise PrintLabelException("Label format string not match")
 
         label_format = LabelFormat(int(match.group(1)), int(match.group(2)))
-        label_format.set_margins(int(match.group(3)),
-                                 int(match.group(4)),
-                                 int(match.group(5)),
-                                 int(match.group(6)))
+        label_format.x_shift = int(match.group(3))
+        label_format.y_shift = int(match.group(4))
+        if match.group(5) == "P":
+            label_format.orientation = QPrinter.Orientation.Portrait
+        else:
+            label_format.orientation = QPrinter.Orientation.Landscape
         return label_format
 
     def __init__(self, width=0, height=0):
         self.width = width
         self.height = height
-        self.margin_left = 0
-        self.margin_top = 0
-        self.margin_right = 0
-        self.margin_bottom = 0
+        self.x_shift = 0
+        self.y_shift = 0
+        self.orientation = QPrinter.Orientation.Portrait
 
     def __str__(self):
-        return f"{self.width}x{self.height} ({self.margin_left},{self.margin_top},{self.margin_right},{self.margin_bottom})"
-
-    def set_margins(self, left, top, right, bottom):
-        self.margin_left = left
-        self.margin_top = top
-        self.margin_right = right
-        self.margin_bottom = bottom
-
+        if self.orientation == QPrinter.Orientation.Portrait:
+            orientation_str = "P"
+        else:
+            orientation_str = "L"
+        return f"{self.width}x{self.height} ({self.x_shift},{self.y_shift}) {orientation_str}"
 
 
 class MainWindow(QMainWindow):
@@ -55,16 +56,18 @@ class MainWindow(QMainWindow):
     def __error(self, err):
         QtWidgets.QMessageBox.critical(self, "Error", str(err))
 
-    def __init__(self, parent=None):
+    def __init__(self, config_path, parent=None):
         super().__init__(parent)
         uic.loadUi("mainwindow.ui", self)
 
-        self.__printer = None
+        self.read_config(config_path)
 
         self.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
         self.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
         self.spinCount.valueChanged.connect(self.__onSpinCount_valueChanged)
         self.comboLabelSize.currentIndexChanged.connect(self.__onComboLabelSize_currentIndexChanged)
+
+        self.__onComboLabelSize_currentIndexChanged()
 
         self.__products = []
         for product in MSApi.gen_products():
@@ -78,6 +81,22 @@ class MainWindow(QMainWindow):
         if self.__organization is None:
             raise PrintLabelException("Could not find organization")
 
+    def read_config(self, config_path):
+        config = configparser.ConfigParser()
+        config.read(config_path, encoding="utf-8")
+
+        MSApi.login(config['moy_sklad']['login'], config['moy_sklad']['password'])
+
+        sizes = []
+        for size_str in config['printer']['sizes'].split('\n'):
+            if not size_str:
+                continue
+            lf = LabelFormat.from_str(size_str)
+            self.comboLabelSize.addItem(str(lf), lf)
+
+        self.set_printer(config['printer']['name'])
+        self.set_resolution(int(config['printer']['resolution']))
+
     def set_printer(self, printer_name):
         if printer_name is None:
             printer_name = QPrinterInfo.defaultPrinterName()
@@ -88,9 +107,10 @@ class MainWindow(QMainWindow):
         self.__printer = PdfPrinter(printer_info)
         pass
 
-    def set_label_formats(self, sizes: [LabelFormat]):
-        for size in sizes:
-            self.comboLabelSize.addItem(str(size), size)
+    def set_resolution(self, resolution: int):
+        if self.__printer is None:
+            raise PrintLabelException("Printer not initialised")
+        self.__printer.setResolution(resolution)
 
     @QtCore.pyqtSlot()
     def __onSpinCount_valueChanged(self):
@@ -115,6 +135,8 @@ class MainWindow(QMainWindow):
             self.__error(e)
         except PdfPrinterException as e:
             self.__error(e)
+        except PrintLabelException as e:
+            self.__error(e)
 
     @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):
@@ -132,8 +154,7 @@ class MainWindow(QMainWindow):
         if self.__printer is None:
             raise PrintLabelException("Printer not initialised")
         self.__printer.setPageSizeMM(QSizeF(lf.width, lf.height))
-        self.__printer.setPageMargins(lf.margin_left,
-                                      lf.margin_top,
-                                      lf.margin_right,
-                                      lf.margin_bottom,
-                                      QPrinter.Millimeter)
+        resolution = self.__printer.resolution()
+        self.__printer.set_shift(int(lf.x_shift*resolution/1000),
+                                 int(lf.y_shift*resolution/1000))
+        self.__printer.setOrientation(lf.orientation)

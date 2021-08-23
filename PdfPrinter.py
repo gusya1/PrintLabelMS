@@ -32,6 +32,8 @@ class PdfPrinter(QPrinter):
 
     def __init__(self, printer_info: QPrinterInfo = None):
         super().__init__(printer_info)
+        self.x_shift = 0
+        self.y_shift = 0
 
     def print_pdf(self, label_data):
         try:
@@ -45,8 +47,12 @@ class PdfPrinter(QPrinter):
 
             painter = QPainter()
             painter.begin(self)
-            painter.drawPixmap(0, 0, pixmap)
+            painter.drawPixmap(self.x_shift, self.y_shift, pixmap)
             painter.end()
 
         except pdf2image.exceptions.PDFInfoNotInstalledError as e:
             raise PdfPrinterException(str(e))
+
+    def set_shift(self, x_shift: int, y_shift: int):
+        self.x_shift = x_shift
+        self.y_shift = y_shift
