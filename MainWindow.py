@@ -2,7 +2,7 @@ import configparser
 
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow, QProgressDialog
 from PyQt5.QtCore import QSizeF, QByteArray
 from PyQt5.QtGui import QPainter, QPixmap, QPageLayout
 from enum import Enum
@@ -119,6 +119,8 @@ class MainWindow(QMainWindow):
     @QtCore.pyqtSlot()
     def __onBtnPrint_clicked(self):
         try:
+            # progress = QProgressDialog("Copying files...", "Abort Copy", 0, numFiles, self)
+
             if self.__printer is None:
                 raise PrintLabelException("Printer not initialised")
 
@@ -127,7 +129,8 @@ class MainWindow(QMainWindow):
                 raise PrintLabelException("Product not selected")
             product = self.__products[self.listProducts.row(product_items[0])]
 
-            label_data = MSApi.load_label(product, self.__organization, self.comboLabelFormat.currentData())
+            label_data = MSApi.load_label(product, self.__organization, self.comboLabelFormat.currentData(),
+                                          verify=False)
 
             self.__printer.print_pdf(label_data)
 
