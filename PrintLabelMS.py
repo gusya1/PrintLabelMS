@@ -1,7 +1,7 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtGui
 import sys
-from MainWindow import MainWindow, LabelFormat, PrintLabelException
-from MSApi.MSApi import MSApi, MSApiException
+from MainWindow import MainWindow, PrintLabelException
+from MSApi import  MSApiException
 import asyncio
 
 

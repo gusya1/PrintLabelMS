@@ -137,6 +137,8 @@ class MainWindow(QMainWindow):
             self.__error(e)
         except PrintLabelException as e:
             self.__error(e)
+        except Exception as e:
+            self.__error(e)
 
     @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):
