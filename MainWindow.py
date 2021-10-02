@@ -1,11 +1,13 @@
 import configparser
+import threading
 
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
 from PyQt5.QtWidgets import QMainWindow, QProgressDialog
-from PyQt5.QtCore import QSizeF, QByteArray
+from PyQt5.QtCore import QSizeF, QByteArray, Qt
 from PyQt5.QtGui import QPainter, QPixmap, QPageLayout
 from enum import Enum
+from typing import Optional
 
 import re
 
@@ -53,6 +55,8 @@ class LabelFormat(object):
 
 class MainWindow(QMainWindow):
 
+    progress_changed = QtCore.pyqtSignal(str, int)
+
     def __error(self, err):
         QtWidgets.QMessageBox.critical(self, "Error", str(err))
 
@@ -60,12 +64,16 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         uic.loadUi("mainwindow.ui", self)
 
+        self.__printer: Optional[PdfPrinter] = None
         self.read_config(config_path)
 
         self.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
         self.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
         self.spinCount.valueChanged.connect(self.__onSpinCount_valueChanged)
         self.comboLabelSize.currentIndexChanged.connect(self.__onComboLabelSize_currentIndexChanged)
+
+
+        # self.progress_changed.connect()
 
         self.__onComboLabelSize_currentIndexChanged()
 
@@ -85,7 +93,7 @@ class MainWindow(QMainWindow):
         config = configparser.ConfigParser()
         config.read(config_path, encoding="utf-8")
 
-        MSApi.login(config['moy_sklad']['login'], config['moy_sklad']['password'])
+        MSApi.set_access_token(config['moy_sklad']['token'])
 
         sizes = []
         for size_str in config['printer']['sizes'].split('\n'):
@@ -105,7 +113,6 @@ class MainWindow(QMainWindow):
             raise PrintLabelException(f"{printer_name} printer is not valid")
 
         self.__printer = PdfPrinter(printer_info)
-        pass
 
     def set_resolution(self, resolution: int):
         if self.__printer is None:
@@ -116,11 +123,9 @@ class MainWindow(QMainWindow):
     def __onSpinCount_valueChanged(self):
         self.__printer.setCopyCount(self.spinCount.value())
 
-    @QtCore.pyqtSlot()
-    def __onBtnPrint_clicked(self):
+    def __print_label(self):
         try:
-            # progress = QProgressDialog("Copying files...", "Abort Copy", 0, numFiles, self)
-
+            self.progress_changed.connect(self.__change_progress)
             if self.__printer is None:
                 raise PrintLabelException("Printer not initialised")
 
@@ -129,9 +134,11 @@ class MainWindow(QMainWindow):
                 raise PrintLabelException("Product not selected")
             product = self.__products[self.listProducts.row(product_items[0])]
 
+            self.progress_changed.emit("Label loading...", 1)
             label_data = MSApi.load_label(product, self.__organization, self.comboLabelFormat.currentData(),
                                           verify=False)
 
+            self.progress_changed.emit("Printing...", 2)
             self.__printer.print_pdf(label_data)
 
         except MSApiException as e:
@@ -142,6 +149,23 @@ class MainWindow(QMainWindow):
             self.__error(e)
         except Exception as e:
             self.__error(e)
+
+        self.progress_changed.emit("Success", 3)
+
+    @QtCore.pyqtSlot(str, int)
+    def __change_progress(self, message, value):
+        self.progress_dialog.setLabelText(message)
+        self.progress_dialog.setValue(value)
+
+    @QtCore.pyqtSlot()
+    def __onBtnPrint_clicked(self):
+        self.progress_dialog = QProgressDialog("Printing", None, 0, 3)
+        self.progress_dialog.setAutoClose(True)
+        thread = threading.Thread(target=self.__print_label)
+        thread.start()
+        self.progress_dialog.exec_()
+        thread.join()
+        # self.__print_label(progress)
 
     @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):
