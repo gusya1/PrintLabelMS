@@ -4,17 +4,18 @@ import threading
 from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
 from PyQt5.QtWidgets import QMainWindow, QProgressDialog
-from PyQt5.QtCore import QSizeF, QByteArray, Qt
-from PyQt5.QtGui import QPainter, QPixmap, QPageLayout
-from enum import Enum
+from PyQt5.QtCore import QSizeF
 from typing import Optional
 
 import re
 
 from MSApi.MSApi import MSApi, MSApiException
+from MSApi import Assortment
+from MSApi import Organization
 
 from PdfPrinter import PdfPrinter, PdfPrinterException
 
+from ui.mainwindow_ui import Ui_MainWindow
 
 class PrintLabelException(Exception):
     pass
@@ -58,19 +59,21 @@ class MainWindow(QMainWindow):
     progress_changed = QtCore.pyqtSignal(str, int)
 
     def __error(self, err):
-        QtWidgets.QMessageBox.critical(self, "Error", str(err))
+        QtWidgets.QMessageBox.critical(None, "Error", str(err))
 
     def __init__(self, config_path, parent=None):
         super().__init__(parent)
-        uic.loadUi("mainwindow.ui", self)
+
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
 
         self.__printer: Optional[PdfPrinter] = None
         self.read_config(config_path)
 
-        self.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
-        self.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
-        self.spinCount.valueChanged.connect(self.__onSpinCount_valueChanged)
-        self.comboLabelSize.currentIndexChanged.connect(self.__onComboLabelSize_currentIndexChanged)
+        self.ui.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
+        self.ui.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
+        self.ui.spinCount.valueChanged.connect(self.__onSpinCount_valueChanged)
+        self.ui.comboLabelSize.currentIndexChanged.connect(self.__onComboLabelSize_currentIndexChanged)
 
 
         # self.progress_changed.connect()
@@ -78,14 +81,15 @@ class MainWindow(QMainWindow):
         self.__onComboLabelSize_currentIndexChanged()
 
         self.__products = []
-        for product in MSApi.gen_products():
-            self.listProducts.addItem(product.get_name())
-            self.__products.append(product)
+        for assort in Assortment.gen_list():
+            obj = MSApi.get_object_by_json(assort.get_json())(assort.get_json())
+            self.ui.listProducts.addItem(obj.get_name())
+            self.__products.append(obj)
 
-        for template in MSApi.gen_customtemplates():
-            self.comboLabelFormat.addItem(template.get_name(), template)
+        for template in Assortment.gen_customtemplates():
+            self.ui.comboLabelFormat.addItem(template.get_name(), template)
 
-        self.__organization = next(MSApi.gen_organizations(), None)
+        self.__organization = next(Organization.gen_list(), None)
         if self.__organization is None:
             raise PrintLabelException("Could not find organization")
 
@@ -100,7 +104,7 @@ class MainWindow(QMainWindow):
             if not size_str:
                 continue
             lf = LabelFormat.from_str(size_str)
-            self.comboLabelSize.addItem(str(lf), lf)
+            self.ui.comboLabelSize.addItem(str(lf), lf)
 
         self.set_printer(config['printer']['name'])
         self.set_resolution(int(config['printer']['resolution']))
@@ -121,7 +125,7 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def __onSpinCount_valueChanged(self):
-        self.__printer.setCopyCount(self.spinCount.value())
+        self.__printer.setCopyCount(self.ui.spinCount.value())
 
     def __print_label(self):
         try:
@@ -129,14 +133,15 @@ class MainWindow(QMainWindow):
             if self.__printer is None:
                 raise PrintLabelException("Printer not initialised")
 
-            product_items = self.listProducts.selectedItems()
+            product_items = self.ui.listProducts.selectedItems()
             if len(product_items) == 0:
                 raise PrintLabelException("Product not selected")
-            product = self.__products[self.listProducts.row(product_items[0])]
+            product = self.__products[self.ui.listProducts.row(product_items[0])]
 
             self.progress_changed.emit("Label loading...", 1)
-            label_data = MSApi.load_label(product, self.__organization, self.comboLabelFormat.currentData(),
-                                          verify=False)
+            label_data = product.request_label(self.__organization,
+                                               self.ui.comboLabelFormat.currentData(),
+                                               verify=True)
 
             self.progress_changed.emit("Printing...", 2)
             self.__printer.print_pdf(label_data)
@@ -169,9 +174,9 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):
-        new_string = self.lineFilter.text().lower()
-        for i in range(self.listProducts.count()):
-            item = self.listProducts.item(i)
+        new_string = self.ui.lineFilter.text().lower()
+        for i in range(self.ui.listProducts.count()):
+            item = self.ui.listProducts.item(i)
             if new_string in item.text().lower():
                 item.setHidden(False)
             else:
@@ -179,7 +184,7 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot()
     def __onComboLabelSize_currentIndexChanged(self):
-        lf: LabelFormat = self.comboLabelSize.currentData()
+        lf: LabelFormat = self.ui.comboLabelSize.currentData()
         if self.__printer is None:
             raise PrintLabelException("Printer not initialised")
         self.__printer.setPageSizeMM(QSizeF(lf.width, lf.height))

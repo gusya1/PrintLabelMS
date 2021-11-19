@@ -1,8 +1,7 @@
 from PyQt5 import QtWidgets, QtGui
 import sys
 from MainWindow import MainWindow, PrintLabelException
-from MSApi import  MSApiException
-import asyncio
+from MSApi import MSApiException
 
 
 def fatal_error(message):

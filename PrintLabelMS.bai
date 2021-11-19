@@ -1,0 +1,26 @@
+{
+  "name": "PrintLabelMS",
+  "main": "PrintLabelMS.py",
+  "build_dir": "snm_build",
+  "installer": {
+    "onefile": true,
+    "windowed": true,
+    "icon": "pictures/icon.ico",
+    "libs": [
+      "venv/Lib/site-packages"
+    ]
+  },
+  "qt": {
+    "ui_dir": "ui",
+    "rc_dir": "rc",
+    "forms": [
+      "mainwindow.ui"
+    ],
+    "resources": [
+      "resources.qrc"
+    ]
+  },
+  "setup": {
+
+  }
+}
