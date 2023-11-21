@@ -14,7 +14,7 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     try:
         if len(app.arguments()) != 2:
-            fatal_error("Invalid arguments.\nUsage: python3 MapGenerator <settings_file>")
+            fatal_error("Invalid arguments.\nUsage: python3 MapGenerator <setting_file>")
 
         splash = QtWidgets.QSplashScreen(QtGui.QPixmap("pictures/snm_logo.png"))
         splash.showMessage("Initialisation...")
