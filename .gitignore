@@ -3,8 +3,9 @@ venv
 .idea
 data
 snm_build
-rc
+.build
 ui
+rc
 __pycache__
 
-settings.ini
+settings.json

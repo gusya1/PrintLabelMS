@@ -1,0 +1,23 @@
+{
+  "moy_sklad_token": "00000000000000000000000000000000000",
+  "printer": {
+    "name": "TSC TE200",
+    "resolution": 600
+  },
+  "label_formats": [
+    {
+      "width": 58,
+      "height": 40,
+      "width_offset": 0,
+      "height_offset": 0,
+      "orientation": "Portrait"
+    },
+    {
+      "width": 74,
+      "height": 120,
+      "width_offset": 0,
+      "height_offset": 0,
+      "orientation": "Landscape"
+    }
+  ]
+}
