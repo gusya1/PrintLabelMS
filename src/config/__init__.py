@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 from enum import Enum
@@ -24,6 +24,7 @@ class PrinterConfig(BaseModel):
 
 class Config(BaseModel):
     moy_sklad_token: str
+    poppler_path: Optional[str]
     printer: PrinterConfig
     label_formats: List[LabelFormat]
 

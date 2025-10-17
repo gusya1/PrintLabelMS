@@ -14,6 +14,7 @@ from gui.MainWindow import MainWindow
 import config
 import moy_sklad
 from print_handler import PrintHandler
+from pdf_to_image_converter.converter import Converter
 
 
 def fatal_error(message):
@@ -27,7 +28,7 @@ if __name__ == '__main__':
         app = QtWidgets.QApplication(sys.argv)
 
         if len(app.arguments()) != 2:
-            print("Invalid arguments.\nUsage: python3 MapGenerator <setting_file>")
+            print("Invalid arguments.\nUsage: python3 -m PrintLabelMS <setting_file>")
             exit(1)
 
         splash = gui.splash_screen.get_splash_screen()
@@ -38,7 +39,8 @@ if __name__ == '__main__':
 
         MSApi.set_access_token(config_model.moy_sklad_token)
 
-        print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution)
+        converter = Converter(config_model.poppler_path)
+        print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
 
         assortment = moy_sklad.get_assortment()
         templates = moy_sklad.get_assortment_custom_templates()

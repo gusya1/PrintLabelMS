@@ -5,5 +5,5 @@ import resources
 
 def get_splash_screen():
     splash = QtWidgets.QSplashScreen(QtGui.QPixmap(resources.get_resource_path("pictures/snm_logo.png")))
-    splash.showMessage("Initialisation...")
+    splash.showMessage("Загружаем товары...")
     return splash

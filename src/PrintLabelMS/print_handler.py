@@ -2,19 +2,12 @@ from PyQt5.QtCore import QByteArray, QSizeF
 from PyQt5.QtGui import QPixmap, QPainter
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
 
-from pdf2image import pdf2image
-import pdf2image.exceptions
-
-import io
+from pdf_to_image_converter.converter import Converter, ConvertError
 
 import config
 
 
-def convert_pdf_to_jpeg(pdf_data, resolution):
-    pages = pdf2image.convert_from_bytes(pdf_data, resolution)
-    img_bytes = io.BytesIO()
-    pages[0].save(img_bytes, format='JPEG')
-    return img_bytes.getvalue()
+poppler_path = "build/windows/external/poppler-25.07.0/Library/bin"
 
 
 def init_printer(printer_name: str, resolution: int):
@@ -34,11 +27,12 @@ def get_qt_orientation(orientation: config.Orientation):
 
 
 class PrintHandler:
-    def __init__(self, printer_name, resolution):
+    def __init__(self, printer_name, resolution, converter: Converter):
         self.__width_offset = 0
         self.__height_offset = 0
         self.__resolution = resolution
         self.__printer = init_printer(printer_name, self.__resolution)
+        self.converter = converter
 
     def set_width_offset(self, width_offset):
         self.__width_offset = int(width_offset * self.__resolution / 1000)
@@ -57,7 +51,7 @@ class PrintHandler:
 
     def print_pdf(self, pdf_data):
         try:
-            jpeg_data = convert_pdf_to_jpeg(pdf_data, self.__resolution)
+            jpeg_data = self.converter.convert_pdf_to_jpeg(pdf_data, self.__resolution)
 
             pixmap = QPixmap()
             pixmap.loadFromData(QByteArray(jpeg_data), format='JPEG')
@@ -67,5 +61,5 @@ class PrintHandler:
             painter.drawPixmap(self.__width_offset, self.__height_offset, pixmap)
             painter.end()
 
-        except pdf2image.exceptions.PDFInfoNotInstalledError as e:
+        except ConvertError as e:
             raise RuntimeError(str(e))
