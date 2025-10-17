@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=Печать этикеток
+Comment=Печать этикеток
+Type=Application
+Categories=Office
+Terminal=true
+Exec=bash -c "~/PrintLabelMS/build/linux/start.sh"
+
