@@ -1,5 +1,0 @@
-pdf2image==1.16.0
-PyQt5==5.15.6
-MSApi==0.2.11
-pydantic~=2.5.2
-requests~=2.31.0

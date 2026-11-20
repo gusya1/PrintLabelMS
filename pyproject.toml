@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "printlabelms"
+version = "0.1.0"
+description = "PyQt5-приложение: печать этикеток из МойСклада — ассортимент и шаблоны через MSApi, PDF→JPEG (poppler), печать на термопринтере"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "gusya1" }]
+dependencies = [
+    "PyQt5>=5.15.6",
+    "MSApi==0.2.11",
+    "pydantic>=2.11",
+    "requests>=2.32",
+    "pdf2image>=1.17.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0",
+    "ruff>=0.8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "src/PrintLabelMS",
+    "src/activity",
+    "src/config",
+    "src/gui",
+    "src/moy_sklad",
+    "src/pdf_to_image_converter",
+    "src/resources",
+]
+
+[tool.ruff]
+line-length = 121
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "UP",
+    "D",
+]
+ignore = [
+    "UP032",
+    "D212",
+    "D104",
+    "D100",
+    "D101",
+    "D102",
+    "D103",
+    "D107",
+    "D211",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
