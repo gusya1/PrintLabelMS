@@ -4,8 +4,6 @@ from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QProgressDialog
 
 
-from MSApi.MSApi import MSApiException
-
 from .ui.mainwindow_ui import Ui_MainWindow
 
 from PrintLabelMS.print_handler import PrintHandler

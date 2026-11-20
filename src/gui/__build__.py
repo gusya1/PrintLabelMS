@@ -1,5 +1,4 @@
 import os
-import subprocess
 import logging
 
 
@@ -20,18 +19,6 @@ def filter_current_directory_files(extension):
 UI_DIR = "ui"
 
 UI_FORM_LIST = filter_current_directory_files('ui')
-
-
-def generate_ui():
-    build_dir = get_build_directory()
-    for form_path in UI_FORM_LIST:
-        ui_path, ui_filename = os.path.split(form_path)
-        ui_filename_base, _ = os.path.splitext(ui_filename)
-        result = subprocess.run(
-            ["pyuic5", "-o", os.path.join(build_dir, UI_DIR, "{}_ui.py".format(ui_filename_base)), form_path])
-        if result.returncode != 0:
-            raise BuildError("\"{}\" form build failed: {}".format(form_path, result.stderr))
-        logging.info("Build form completed")
 
 
 def generate_ui():

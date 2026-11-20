@@ -6,8 +6,6 @@ import sys
 from MSApi import MSApiException
 from MSApi import MSApi
 
-import resources
-
 import gui.splash_screen
 import gui.message_box
 from gui.MainWindow import MainWindow

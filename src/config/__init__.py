@@ -1,10 +1,9 @@
-from typing import List, Optional
+from enum import StrEnum
 
 from pydantic import BaseModel
-from enum import Enum
 
 
-class Orientation(str, Enum):
+class Orientation(StrEnum):
     PORTRAIT = "Portrait",
     LANDSCAPE = "Landscape"
 
@@ -24,11 +23,11 @@ class PrinterConfig(BaseModel):
 
 class Config(BaseModel):
     moy_sklad_token: str
-    poppler_path: Optional[str]
+    poppler_path: str | None
     printer: PrinterConfig
-    label_formats: List[LabelFormat]
+    label_formats: list[LabelFormat]
 
 
 def read_config(file_path):
-    config_file = open(file_path, "r", encoding="utf-8")
+    config_file = open(file_path, encoding="utf-8")
     return Config.model_validate_json(config_file.read())

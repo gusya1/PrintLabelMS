@@ -3,8 +3,10 @@ import pdf2image.exceptions
 
 import io
 
+
 class ConvertError(Exception):
     pass
+
 
 class Converter:
     def __init__(self, poppler_path=None):
