@@ -1,6 +1,6 @@
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Orientation(StrEnum):
@@ -9,16 +9,16 @@ class Orientation(StrEnum):
 
 
 class LabelFormat(BaseModel):
-    width: int
-    height: int
-    width_offset: int
-    height_offset: int
+    width: int = Field(gt=0)
+    height: int = Field(gt=0)
+    width_offset: int = Field(ge=0)
+    height_offset: int = Field(ge=0)
     orientation: Orientation
 
 
 class PrinterConfig(BaseModel):
     name: str
-    resolution: int
+    resolution: int = Field(gt=0)
 
 
 class Config(BaseModel):
@@ -29,5 +29,5 @@ class Config(BaseModel):
 
 
 def read_config(file_path):
-    config_file = open(file_path, encoding="utf-8")
-    return Config.model_validate_json(config_file.read())
+    with open(file_path, encoding="utf-8") as config_file:
+        return Config.model_validate_json(config_file.read())

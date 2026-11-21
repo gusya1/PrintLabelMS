@@ -7,9 +7,6 @@ from pdf_to_image_converter.converter import Converter, ConvertError
 import config
 
 
-poppler_path = "build/windows/external/poppler-25.07.0/Library/bin"
-
-
 def init_printer(printer_name: str, resolution: int):
     printer_info = QPrinterInfo.printerInfo(printer_name)
     if printer_info.isNull():
@@ -55,9 +52,12 @@ class PrintHandler:
 
             pixmap = QPixmap()
             pixmap.loadFromData(QByteArray(jpeg_data), format='JPEG')
+            if pixmap.isNull():
+                raise RuntimeError("Не удалось загрузить JPEG-изображение этикетки")
 
             painter = QPainter()
-            painter.begin(self.__printer)
+            if not painter.begin(self.__printer):
+                raise RuntimeError("Не удалось инициализировать принтер для печати")
             painter.drawPixmap(self.__width_offset, self.__height_offset, pixmap)
             painter.end()
 

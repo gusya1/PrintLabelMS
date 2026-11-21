@@ -9,9 +9,5 @@ venv/
 .mypy_cache/
 .idea/
 .env
-data
-snm_build
-.build
-ui
-rc
+src/gui/ui/
 settings.json

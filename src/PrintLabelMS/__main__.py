@@ -5,6 +5,7 @@ import sys
 
 from MSApi import MSApiException
 from MSApi import MSApi
+from pydantic import ValidationError
 
 import gui.splash_screen
 import gui.message_box
@@ -26,7 +27,7 @@ if __name__ == '__main__':
         app = QtWidgets.QApplication(sys.argv)
 
         if len(app.arguments()) != 2:
-            print("Invalid arguments.\nUsage: python3 -m PrintLabelMS <setting_file>")
+            print("Invalid arguments.\nUsage: python src/PrintLabelMS/__main__.py <setting_file>")
             exit(1)
 
         splash = gui.splash_screen.get_splash_screen()
@@ -43,9 +44,10 @@ if __name__ == '__main__':
         assortment = moy_sklad.get_assortment()
         templates = moy_sklad.get_assortment_custom_templates()
 
-        organization = moy_sklad.get_organizations()[0]
-        if not organization:
+        organizations = moy_sklad.get_organizations()
+        if not organizations:
             raise RuntimeError("Организация не найдена")
+        organization = organizations[0]
 
         window = MainWindow(print_handler, config_model.label_formats, assortment, templates, organization)
         window.show()
@@ -55,6 +57,10 @@ if __name__ == '__main__':
     except MSApiException as e:
         fatal_error(e)
     except requests.exceptions.RequestException as e:
+        fatal_error(e)
+    except ValidationError as e:
+        fatal_error(e)
+    except OSError as e:
         fatal_error(e)
     except RuntimeError as e:
         fatal_error(e)

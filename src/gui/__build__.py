@@ -26,6 +26,7 @@ def generate_ui():
     ui_compiler = PyQt5.uic.compiler.UICompiler()
 
     build_dir = get_build_directory()
+    os.makedirs(os.path.join(build_dir, UI_DIR), exist_ok=True)
 
     for form_path in UI_FORM_LIST:
         try:
@@ -34,14 +35,12 @@ def generate_ui():
 
             output_file_name = "{}_ui.py".format(ui_filename_base)
             output_file_path = os.path.join(build_dir, UI_DIR, output_file_name)
-            output_file = open(output_file_path, "w", encoding="utf-8")
-
-            ui_compiler.reset()
-            ui_compiler.resources = []
-            ui_compiler.compileUi(os.path.abspath(form_path),
-                                  output_file,
-                                  False, "", None)
-            output_file.close()
+            with open(output_file_path, "w", encoding="utf-8") as output_file:
+                ui_compiler.reset()
+                ui_compiler.resources = []
+                ui_compiler.compileUi(os.path.abspath(form_path),
+                                      output_file,
+                                      False, "", None)
 
         except SyntaxError as e:
             raise BuildError("\"{}\" form parse failed: {}".format(form_path, str(e)))

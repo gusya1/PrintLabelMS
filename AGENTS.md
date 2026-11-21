@@ -54,7 +54,8 @@ src-layout:
 - `src/resources/__init__.py` — get_resource_path (pictures/).
 Внешнее: `build/windows/external/poppler-25.07.0/` — бинарники poppler для Windows
 (poppler_path в settings.json); `settings_example.json` → settings.json с токеном;
-`start.bat`; `.vscode/launch.json`. Тесты: tests/test_config.py, test_converter.py.
+`start.bat`; `.vscode/launch.json`.
+Тесты: tests/test_build.py, test_config.py, test_converter.py, test_moy_sklad.py.
 
 ## 6. Правила проекта
 - Репозиторий публичный: никаких токенов, реальных данных клиентов и внутренних URL в коде, доках и фикстурах; токен только в gitignored settings.json (пример — settings_example.json с заглушкой).

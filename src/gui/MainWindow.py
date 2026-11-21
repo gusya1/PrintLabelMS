@@ -1,6 +1,7 @@
 import threading
 
-from PyQt5 import QtWidgets, QtCore
+import resources
+from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QMainWindow, QProgressDialog
 
 
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowIcon(QtGui.QPixmap(resources.get_resource_path("pictures/icon.png")))
 
         self.__print_handler = print_handler
 
@@ -32,7 +34,7 @@ class MainWindow(QMainWindow):
 
         self.__assortment = assortment
         for product in self.__assortment:
-            self.ui.listProducts.addItem(product.get_name())
+            self.ui.listProducts.addItem(product.get_json()["meta"]["name"])
 
         for template in templates:
             self.ui.comboLabelFormat.addItem(template.get_name(), template)
@@ -44,33 +46,38 @@ class MainWindow(QMainWindow):
 
         self.__organization = organization
 
-    def reset_print_settings(self):
-        label_format = self.ui.comboLabelSize.currentData()
+    def reset_print_settings(self, label_format, count):
         self.__print_handler.set_page_size(label_format.width, label_format.height)
         self.__print_handler.set_width_offset(label_format.width_offset)
         self.__print_handler.set_height_offset(label_format.height_offset)
         self.__print_handler.set_orientation(label_format.orientation)
-        self.__print_handler.set_copy_count(self.ui.spinCount.value())
+        self.__print_handler.set_copy_count(count)
 
-    def __print_label(self):
+    def __collect_print_params(self):
+        product_items = self.ui.listProducts.selectedItems()
+        if len(product_items) == 0:
+            raise RuntimeError("Продукт не выбран")
+        product = self.__assortment[self.ui.listProducts.row(product_items[0])]
+        label_format = self.ui.comboLabelSize.currentData()
+        if label_format is None:
+            raise RuntimeError("Формат этикетки не выбран")
+        template = self.ui.comboLabelFormat.currentData()
+        count = self.ui.spinCount.value()
+        return product, label_format, template, count
+
+    def __print_label(self, product, label_format, template, count):
         try:
-            self.reset_print_settings()
-
-            product_items = self.ui.listProducts.selectedItems()
-            if len(product_items) == 0:
-                raise RuntimeError("Продукт не выбран")
-            product = self.__assortment[self.ui.listProducts.row(product_items[0])]
+            self.reset_print_settings(label_format, count)
 
             self.progress_changed.emit("Загрузка этикетки...", 1)
-            label_data = product.request_label(self.__organization,
-                                               self.ui.comboLabelFormat.currentData(),
-                                               verify=True)
+            label_data = product.request_label(self.__organization, template, verify=True)
 
             self.progress_changed.emit("Печать...", 2)
             self.__print_handler.print_pdf(label_data)
 
         except Exception as e:
             self.error_expected.emit(str(e))
+            return
 
         self.progress_changed.emit("Готово", 3)
 
@@ -81,17 +88,22 @@ class MainWindow(QMainWindow):
 
     @QtCore.pyqtSlot(str)
     def __show_error_dialog(self, message):
-        QtWidgets.QMessageBox.warning(None, "Ошибка", str(message))
+        QtWidgets.QMessageBox.warning(self, "Ошибка", str(message))
 
     @QtCore.pyqtSlot()
     def __onBtnPrint_clicked(self):
-        self.progress_dialog = QProgressDialog("Printing", None, 0, 3)
+        try:
+            product, label_format, template, count = self.__collect_print_params()
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", str(e))
+            return
+
+        self.progress_dialog = QProgressDialog("Печать...", None, 0, 3)
         self.progress_dialog.setAutoClose(True)
-        thread = threading.Thread(target=self.__print_label)
+        thread = threading.Thread(target=self.__print_label, args=(product, label_format, template, count))
         thread.start()
         self.progress_dialog.exec_()
         thread.join()
-        # self.__print_label(progress)
 
     @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):

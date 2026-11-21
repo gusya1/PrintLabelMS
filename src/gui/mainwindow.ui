@@ -99,7 +99,7 @@
       <item>
        <widget class="QPushButton" name="btnPrint">
         <property name="text">
-         <string>Print</string>
+         <string>Печать</string>
         </property>
        </widget>
       </item>

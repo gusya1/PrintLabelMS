@@ -18,5 +18,10 @@ class Converter:
             img_bytes = io.BytesIO()
             pages[0].save(img_bytes, format='JPEG')
             return img_bytes.getvalue()
-        except pdf2image.exceptions.PDFInfoNotInstalledError as e:
-            raise ConvertError(str(e))
+        except (
+                pdf2image.exceptions.PopplerNotInstalledError,
+                pdf2image.exceptions.PDFPageCountError,
+                pdf2image.exceptions.PDFSyntaxError,
+                pdf2image.exceptions.PDFPopplerTimeoutError,
+        ) as e:
+            raise ConvertError(str(e)) from e
