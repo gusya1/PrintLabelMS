@@ -52,8 +52,11 @@ src-layout:
 - `src/pdf_to_image_converter/converter.py` — Converter.convert_pdf_to_jpeg
   (pdf2image, poppler_path), ConvertError;
 - `src/resources/__init__.py` — get_resource_path (pictures/).
-Внешнее: `build/windows/external/poppler-25.07.0/` — бинарники poppler для Windows
-(poppler_path в settings.json); `settings_example.json` → settings.json с токеном;
+Внешнее: poppler для Windows не в git — скачивается
+`scripts/download_poppler_windows.bat` в
+`build/windows/external/poppler-25.07.0/` (poppler_path в settings.json);
+Linux — `scripts/download_poppler_linux.sh`;
+`settings_example.json` → settings.json с токеном;
 `start.bat`; `.vscode/launch.json`.
 Тесты: tests/test_build.py, test_config.py, test_converter.py, test_moy_sklad.py.
 

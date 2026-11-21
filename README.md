@@ -9,14 +9,21 @@ PyQt5-приложение для печати этикеток из МойСк�
 ## Требования
 
 - Python >= 3.12
-- poppler для Windows — в `build/windows/external/poppler-25.07.0`
-  (путь задаётся в settings.json, поле `poppler_path`)
+- poppler:
+  - Windows: после клона выполнить `scripts\download_poppler_windows.bat`
+    (скачивает zip с GitHub Releases в
+    `build/windows/external/poppler-25.07.0`; путь задаётся в settings.json,
+    поле `poppler_path`);
+  - Linux: выполнить `bash scripts/download_poppler_linux.sh`
+    (устанавливает poppler-utils пакетным менеджером; `poppler_path` —
+    null или `/usr/bin`).
 
 ## Установка
 
 ```bat
 py -3.13 -m venv .venv
 .venv\Scripts\pip install -e ".[dev]"
+scripts\download_poppler_windows.bat
 python src/gui/__build__.py
 ```
 

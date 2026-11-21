@@ -9,5 +9,6 @@ venv/
 .mypy_cache/
 .idea/
 .env
+build/windows/external/
 src/gui/ui/
 settings.json
