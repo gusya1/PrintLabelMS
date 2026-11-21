@@ -12,7 +12,7 @@ import gui.message_box
 from gui.MainWindow import MainWindow
 import config
 import moy_sklad
-from print_handler import PrintHandler
+from PrintLabelMS.print_handler import PrintHandler
 from pdf_to_image_converter.converter import Converter
 
 
