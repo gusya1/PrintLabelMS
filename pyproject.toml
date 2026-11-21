@@ -27,7 +27,6 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = [
     "src/PrintLabelMS",
-    "src/activity",
     "src/config",
     "src/gui",
     "src/moy_sklad",
