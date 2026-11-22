@@ -1,10 +1,15 @@
+import json
+import os
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from config.migrations import CURRENT_SCHEMA_VERSION as CURRENT_SCHEMA_VERSION, migrate
+
 
 class Orientation(StrEnum):
-    PORTRAIT = "Portrait",
+    PORTRAIT = "Portrait"
     LANDSCAPE = "Landscape"
 
 
@@ -22,12 +27,23 @@ class PrinterConfig(BaseModel):
 
 
 class Config(BaseModel):
+    schema_version: int = 1
     moy_sklad_token: str
-    poppler_path: str | None
+    check_updates: bool = True
     printer: PrinterConfig
     label_formats: list[LabelFormat]
 
 
 def read_config(file_path):
     with open(file_path, encoding="utf-8") as config_file:
-        return Config.model_validate_json(config_file.read())
+        raw = json.load(config_file)
+    migrated = migrate(raw)
+    if migrated != raw:
+        backup_path = "{}.bak-{}".format(file_path, datetime.now().strftime("%Y%m%d-%H%M%S"))
+        with open(backup_path, "w", encoding="utf-8") as backup_file:
+            json.dump(raw, backup_file, indent=2)
+        tmp_path = file_path + ".tmp"
+        with open(tmp_path, "w", encoding="utf-8") as config_file:
+            json.dump(migrated, config_file, indent=2)
+        os.replace(tmp_path, file_path)
+    return Config.model_validate(migrated)

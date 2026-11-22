@@ -1,10 +1,11 @@
 {
+  "schema_version": 2,
   "moy_sklad_token": "00000000000000000000000000000000000",
+  "check_updates": true,
   "printer": {
     "name": "TSC TE200",
     "resolution": 600
   },
-  "poppler_path": "build/windows/external/poppler-25.07.0/Library/bin",
   "label_formats": [
     {
       "width": 58,
