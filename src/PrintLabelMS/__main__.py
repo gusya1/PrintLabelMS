@@ -1,17 +1,15 @@
-import requests
 from PyQt5 import QtWidgets
 
 import sys
 
-from MSApi import MSApiException
-from MSApi import MSApi
 from pydantic import ValidationError
 
 import gui.splash_screen
 import gui.message_box
 from gui.MainWindow import MainWindow
 import config
-import moy_sklad
+from moysklad_manager.exceptions import MoySkladError
+from moysklad_manager.manager import MoySkladManager
 from PrintLabelMS.print_handler import PrintHandler
 from pdf_to_image_converter.converter import Converter
 
@@ -36,27 +34,25 @@ if __name__ == '__main__':
         config_path = app.arguments()[1]
         config_model = config.read_config(config_path)
 
-        MSApi.set_access_token(config_model.moy_sklad_token)
+        manager = MoySkladManager(config_model.moy_sklad_token)
 
         converter = Converter(config_model.poppler_path)
         print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
 
-        assortment = moy_sklad.get_assortment()
-        templates = moy_sklad.get_assortment_custom_templates()
+        assortment = manager.get_assortment()
+        templates = manager.get_custom_templates()
 
-        organizations = moy_sklad.get_organizations()
+        organizations = manager.get_organizations()
         if not organizations:
             raise RuntimeError("Организация не найдена")
         organization = organizations[0]
 
-        window = MainWindow(print_handler, config_model.label_formats, assortment, templates, organization)
+        window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates, organization)
         window.show()
 
         splash.finish(window)
         app.exec()
-    except MSApiException as e:
-        fatal_error(e)
-    except requests.exceptions.RequestException as e:
+    except MoySkladError as e:
         fatal_error(e)
     except ValidationError as e:
         fatal_error(e)

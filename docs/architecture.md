@@ -11,12 +11,13 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
 1. `settings.json` (путь — аргумент запуска) читается в pydantic-модель `Config`:
    токен МойСклада, путь к poppler, принтер (имя, разрешение), форматы этикеток
    (размер, смещения, ориентация).
-2. Токен передаётся в MSApi (`MSApi.set_access_token`); загружаются ассортимент
-   (`get_assortment`), кастомные шаблоны (`get_assortment_custom_templates`)
+2. Токен передаётся в `MoySkladManager`; через него загружаются ассортимент
+   (`get_assortment`), кастомные шаблоны (`get_custom_templates`)
    и организации (`get_organizations`, используется первая).
 3. `MainWindow` показывает список товаров с фильтром, выбор формата этикетки
    и шаблона; по кнопке печати в фоновом потоке:
-   - `product.request_label(organization, template)` — PDF-этикетка от МойСклада;
+   - `manager.request_label(product, organization, template)` — PDF-этикетка
+      от МойСклада;
    - `Converter.convert_pdf_to_jpeg(pdf_data, resolution)` — JPEG через pdf2image
      (poppler из `poppler_path`);
    - `PrintHandler.print_pdf(jpeg_data)` — QPixmap → QPrinter: размер страницы
@@ -35,10 +36,18 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
   `PrintHandler`; контракт печати: PDF → JPEG → QPixmap → QPrinter.
 - `src/gui/MainWindow.py` — окно приложения; печать выполняется в отдельном
   потоке, результат и ошибки возвращаются в GUI через сигналы.
-- `src/moy_sklad/__init__.py` — адаптер над сторонним MSApi: ассортимент,
-    кастомные шаблоны, организации (не пакет moy_sklad).
+- `src/moysklad_manager/models.py` — `Assortment` (наследует библиотечный
+  `MoySkladAssortment`, добавляет `salePrices` для export), `LabelTemplate`
+  (кастомный шаблон этикетки).
+- `src/moysklad_manager/getters.py` — `get_assortment`,
+  `get_custom_templates`: обход эндпоинтов через библиотечный
+  `walk_for_href`.
+- `src/moysklad_manager/manager.py` — `MoySkladManager(token)`: ассортимент,
+    кастомные шаблоны, организации (библиотечный `MoySkladOrganization`),
+    `request_label(product, organization, template)`; адаптер над внешней
+    библиотекой moy_sklad (`MoySkladClient`).
+- `src/moysklad_manager/exceptions.py` — `MoySkladError`.
 - `src/pdf_to_image_converter/converter.py` — `Converter`, `ConvertError`.
-- `src/PrintLabelMS/exceptions.py` — `AppError`, `MoySkladError`.
 - `src/gui/__build__.py` — генерация `gui/ui/*_ui.py` из `.ui`-форм
   (`mainwindow.ui`); папка `gui/ui/` не коммитится.
 - `src/resources/__init__.py` — пути к ресурсам (pictures/).

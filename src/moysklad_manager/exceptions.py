@@ -1,0 +1,2 @@
+class MoySkladError(Exception):
+    pass

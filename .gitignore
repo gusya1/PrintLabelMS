@@ -1,14 +1,7 @@
 __pycache__/
-*.py[cod]
-*.egg-info/
-dist/
 .venv/
-venv/
 .pytest_cache/
 .ruff_cache/
-.mypy_cache/
-.idea/
-.env
 build/windows/external/
 src/gui/ui/
 settings.json

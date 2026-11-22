@@ -20,24 +20,34 @@ class MainWindow(QMainWindow):
     error_expected = QtCore.pyqtSignal(str)
 
 
-    def __init__(self, print_handler: PrintHandler, label_formats, assortment, templates, organization, parent=None):
+    def __init__(
+        self,
+        print_handler: PrintHandler,
+        manager,
+        label_formats,
+        assortment,
+        templates,
+        organization,
+        parent=None,
+    ):
         super().__init__(parent)
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setWindowIcon(QtGui.QPixmap(resources.get_resource_path("pictures/icon.png")))
+        self.setWindowIcon(QtGui.QIcon(resources.get_resource_path("pictures/icon.png")))
 
         self.__print_handler = print_handler
+        self.__manager = manager
 
         for label_format in label_formats:
             self.ui.comboLabelSize.addItem(get_label_format_string(label_format), label_format)
 
         self.__assortment = assortment
         for product in self.__assortment:
-            self.ui.listProducts.addItem(product.get_json()["meta"]["name"])
+            self.ui.listProducts.addItem(product.name)
 
         for template in templates:
-            self.ui.comboLabelFormat.addItem(template.get_name(), template)
+            self.ui.comboLabelFormat.addItem(template.name, template)
 
         self.ui.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
         self.ui.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
@@ -70,7 +80,7 @@ class MainWindow(QMainWindow):
             self.reset_print_settings(label_format, count)
 
             self.progress_changed.emit("Загрузка этикетки...", 1)
-            label_data = product.request_label(self.__organization, template, verify=True)
+            label_data = self.__manager.request_label(product, self.__organization, template)
 
             self.progress_changed.emit("Печать...", 2)
             self.__print_handler.print_pdf(label_data)

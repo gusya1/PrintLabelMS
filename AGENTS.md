@@ -3,12 +3,13 @@
 ## 1. Обзор проекта
 
 PrintLabelMS — самостоятельное PyQt5-приложение для печати этикеток из МойСклада:
-загрузка ассортимента, кастомных шаблонов этикеток и организации через MSApi;
+загрузка ассортимента, кастомных шаблонов этикеток и организации через библиотеку moy_sklad;
 PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и печатается на термопринтере.
 
 ### Стек
 - Python >= 3.12
-- PyQt5>=5.15.6, MSApi==0.2.11, pydantic>=2.11, requests>=2.32, pdf2image>=1.17.0
+- PyQt5>=5.15.6, moy_sklad @ git+https://github.com/gusya1/moy_sklad@v0.1.0,
+  pydantic>=2.11, requests>=2.32, pdf2image>=1.17.0
 - Сборка: hatchling (editable-установка); тесты: pytest; линт: ruff (line-length 121)
 
 ## 2. Окружение
@@ -16,7 +17,7 @@ PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и
 - Перед запуском GUI сгенерировать UI из форм: `python src/gui/__build__.py`
   (папка `gui/ui/` в gitignore).
 - Токен МойСклада хранится только в settings.json (gitignored), не в коде, git и фикстурах.
-- Версия приложения 0.1.0; релиз по тегу.
+- Версия приложения 0.2.0; релиз по тегу.
 
 ## 3. Документация
 - Документация проекта находится в docs/.
@@ -35,10 +36,9 @@ PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и
 ## 5. Карта проекта
 src-layout:
 - `src/PrintLabelMS/__main__.py` — точка входа: QApplication, чтение settings.json,
-  MSApi.set_access_token, загрузка ассортимента/шаблонов/организации, MainWindow;
+  MoySkladManager(token), загрузка ассортимента/шаблонов/организации, MainWindow;
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
   `PrintHandler` (размер/ориентация/смещения/копии, print_pdf: JPEG → QPixmap → QPrinter);
-- `src/PrintLabelMS/exceptions.py` — AppError, MoySkladError;
 - `src/config/__init__.py` — pydantic-модели Config/PrinterConfig/LabelFormat/Orientation
   и read_config (settings.json);
 - `src/gui/MainWindow.py` — окно: список товаров с фильтром, выбор формата этикетки и
@@ -46,9 +46,19 @@ src-layout:
 - `src/gui/splash_screen.py`, `src/gui/message_box.py` — сплэш и фатальные ошибки;
 - `src/gui/__build__.py` — генерация `gui/ui/*_ui.py` из `.ui`-форм (PyQt5.uic);
   `mainwindow.ui` — исходная форма;
-- `src/moy_sklad/__init__.py` — тонкая обёртка над MSApi: get_assortment,
-  get_assortment_custom_templates, get_organizations. Явная пометка: это НЕ пакет
-  moy_sklad (D:\ProjectsPy\moy_sklad) — только адаптер над сторонним MSApi;
+- `src/moysklad_manager/__init__.py` — пустой пакет (без реэкспортов),
+  импорты из подмодулей;
+- `src/moysklad_manager/models.py` — Assortment (наследует библиотечный
+  MoySkladAssortment, добавляет salePrices для export) и LabelTemplate
+  (кастомный шаблон этикетки);
+- `src/moysklad_manager/getters.py` — get_assortment, get_custom_templates:
+  обход через библиотечный walk_for_href по entity/assortment и
+  entity/assortment/metadata/customtemplate;
+- `src/moysklad_manager/manager.py` — адаптер над внешней библиотекой moy_sklad
+  (MoySkladClient): MoySkladManager(token) с get_assortment,
+  get_custom_templates, get_organizations (библиотечный MoySkladOrganization),
+  request_label(product, organization, template);
+- `src/moysklad_manager/exceptions.py` — MoySkladError;
 - `src/pdf_to_image_converter/converter.py` — Converter.convert_pdf_to_jpeg
   (pdf2image, poppler_path), ConvertError;
 - `src/resources/__init__.py` — get_resource_path (pictures/).
@@ -58,13 +68,13 @@ src-layout:
 Linux — `scripts/download_poppler_linux.sh`;
 `settings_example.json` → settings.json с токеном;
 `start.bat`; `.vscode/launch.json`.
-Тесты: tests/test_build.py, test_config.py, test_converter.py, test_moy_sklad.py.
+Тесты: tests/test_build.py, test_config.py, test_converter.py, test_moysklad_manager.py.
 
 ## 6. Правила проекта
 - Репозиторий публичный: никаких токенов, реальных данных клиентов и внутренних URL в коде, доках и фикстурах; токен только в gitignored settings.json (пример — settings_example.json с заглушкой).
 
 ## 7. Версионирование
-- Версия в pyproject.toml; релиз — тег vX.Y.Z (текущий: v0.1.0).
+- Версия в pyproject.toml; релиз — тег vX.Y.Z (текущий: v0.2.0).
 
 ## 8. Тестирование и проверка
 После изменения кода, строго по порядку:
