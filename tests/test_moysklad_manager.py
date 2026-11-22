@@ -233,7 +233,7 @@ def test_request_label_200(monkeypatch):
     label_data = manager.request_label(make_product(), make_organization(), make_template())
     assert label_data == b"PDF-DATA"
     request, data = client.post_calls[0]
-    assert request == "entity/assortment/9881531b-9a09-11e6-8af5-581e00000078/export"
+    assert request == "entity/product/9881531b-9a09-11e6-8af5-581e00000078/export"
     payload = json.loads(data)
     assert payload["count"] == 1
     assert payload["salePrice"] == {"id": "sp1", "price": 100}

@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
         manager = MoySkladManager(config_model.moy_sklad_token)
 
-        converter = Converter(config_model.poppler_path)
+        converter = Converter()
         print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
 
         assortment = manager.get_assortment()

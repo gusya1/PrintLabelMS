@@ -1,30 +1,51 @@
+import io
+
+from PIL import Image
 import pytest
-import pdf2image.exceptions
 
 from pdf_to_image_converter.converter import ConvertError, Converter
 
 
-def test_convert_pdf_to_jpeg_without_poppler(tmp_path):
-    converter = Converter(poppler_path=tmp_path)
-    with pytest.raises(ConvertError):
-        converter.convert_pdf_to_jpeg(b"%PDF-1.4 fake", 200)
+def build_minimal_pdf() -> bytes:
+    objects = [
+        b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        b"2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        b"3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] >>\nendobj\n",
+    ]
+    header = b"%PDF-1.4\n"
+    body = b""
+    offsets = []
+    pos = len(header)
+    for obj in objects:
+        offsets.append(pos)
+        pos += len(obj)
+        body += obj
+    xref_pos = pos
+    xref = b"xref\n0 4\n0000000000 65535 f \n"
+    for off in offsets:
+        xref += f"{off:010d} 00000 n \n".encode()
+    trailer = (
+        b"trailer\n<< /Size 4 /Root 1 0 R >>\nstartxref\n"
+        + str(xref_pos).encode()
+        + b"\n%%EOF\n"
+    )
+    return header + body + xref + trailer
 
 
-@pytest.mark.parametrize(
-        "exception",
-        [
-            pdf2image.exceptions.PopplerNotInstalledError,
-            pdf2image.exceptions.PDFInfoNotInstalledError,
-            pdf2image.exceptions.PDFPageCountError,
-            pdf2image.exceptions.PDFSyntaxError,
-            pdf2image.exceptions.PDFPopplerTimeoutError,
-        ],
-)
-def test_convert_pdf_to_jpeg_wraps_poppler_errors(monkeypatch, exception):
-    def fake_convert(*args, **kwargs):
-        raise exception("test error")
-
-    monkeypatch.setattr("pdf_to_image_converter.converter.pdf2image.convert_from_bytes", fake_convert)
+def test_convert_pdf_to_jpeg_returns_jpeg():
     converter = Converter()
-    with pytest.raises(ConvertError, match="test error"):
-        converter.convert_pdf_to_jpeg(b"%PDF-1.4 fake", 200)
+    jpeg_bytes = converter.convert_pdf_to_jpeg(build_minimal_pdf(), 144)
+    assert jpeg_bytes[:2] == b"\xff\xd8"
+
+
+def test_convert_pdf_to_jpeg_resolution_scale():
+    converter = Converter()
+    jpeg_bytes = converter.convert_pdf_to_jpeg(build_minimal_pdf(), 144)
+    img = Image.open(io.BytesIO(jpeg_bytes))
+    assert img.size == (144, 144)
+
+
+def test_convert_pdf_to_jpeg_corrupted_raises():
+    converter = Converter()
+    with pytest.raises(ConvertError):
+        converter.convert_pdf_to_jpeg(b"%PDF-1.4 corrupted garbage", 144)
