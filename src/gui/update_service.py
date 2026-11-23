@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import os
 from datetime import datetime, timedelta
@@ -25,6 +26,17 @@ class UpdateService(QtCore.QObject):
     @property
     def installed(self):
         return updater.paths.current_link().is_symlink()
+
+    def current_version(self):
+        """Версия активной установки: из симлинка current, иначе из метаданных пакета."""
+        try:
+            return "v{}.{}.{}".format(*self.__current_version())
+        except Exception:
+            pass
+        try:
+            return "v{}".format(importlib.metadata.version(updater.paths.APP_NAME))
+        except importlib.metadata.PackageNotFoundError:
+            return "unknown"
 
     def start_check(self):
         if not self.installed:

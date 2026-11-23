@@ -45,8 +45,8 @@ src-layout:
 - `src/gui/MainWindow.py` — окно: список товаров с фильтром, выбор формата этикетки и
   шаблона, печать в фоне (threading + QProgressDialog), диалоги ошибок;
 - `src/gui/update_service.py` — UpdateService: фоновая проверка новой версии
-  (кэш 24 ч) и update/rollback в отдельном потоке, общается с GUI через сигналы
-  (update_available, progress_changed, finished);
+  (кэш 24 ч), текущая версия активной установки, update/rollback в отдельном
+  потоке, общается с GUI через сигналы (update_available, progress_changed, finished);
 - `src/gui/splash_screen.py`, `src/gui/message_box.py` — сплэш и фатальные ошибки;
 - `src/gui/__build__.py` — генерация `gui/ui/*_ui.py` из `.ui`-форм (PyQt5.uic);
   `mainwindow.ui` — исходная форма;

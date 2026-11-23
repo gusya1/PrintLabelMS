@@ -69,7 +69,9 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
 `UpdateService` (`src/gui/update_service.py`): фоновая проверка раз в 24 ч
 (кэш `~/.cache/printlabelms/update_check.json`, флаг `check_updates`)
 эмитит доступную версию, update/rollback выполняется в отдельном потоке
-с сигналами прогресса и результата. GUI (статус-бар + кнопка «Обновить»)
+с сигналами прогресса и результата. Сервис также отдаёт текущую версию
+активной установки (`current_version()`: из симлинка `current`, иначе из
+метаданных пакета). GUI (статус-бар с версией + кнопка «Обновить»)
 показывает уведомление; после успешного обновления приложение
 перезапускается.
 
@@ -92,9 +94,9 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
 - `src/gui/MainWindow.py` — окно приложения; печать выполняется в отдельном
   потоке, результат и ошибки возвращаются в GUI через сигналы.
 - `src/gui/update_service.py` — `UpdateService`: фоновая проверка новой
-  версии (кэш 24 ч) и выполнение update/rollback в отдельном потоке;
-  общается с GUI через сигналы (`update_available`, `progress_changed`,
-  `finished`).
+  версии (кэш 24 ч), текущая версия активной установки, выполнение
+  update/rollback в отдельном потоке; общается с GUI через сигналы
+  (`update_available`, `progress_changed`, `finished`).
 - `src/moysklad_manager/models.py` — `Assortment` (наследует библиотечный
   `MoySkladAssortment`, добавляет `salePrices` для export), `LabelTemplate`
   (кастомный шаблон этикетки).

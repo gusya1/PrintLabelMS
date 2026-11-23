@@ -147,3 +147,15 @@ def test_rollback_failure(qapp, env, monkeypatch):
     service.rollback()
     assert _wait_for(qapp, lambda: len(results) == 1)
     assert results[0] == (False, "сбой отката")
+
+
+def test_current_version_from_symlink(env):
+    _install(env, "0.3.2")
+    service = UpdateService()
+    assert service.current_version() == "v0.3.2"
+
+
+def test_current_version_fallback_to_package_metadata(env, monkeypatch):
+    monkeypatch.setattr("importlib.metadata.version", lambda name: "9.9.9")
+    service = UpdateService()
+    assert service.current_version() == "v9.9.9"
