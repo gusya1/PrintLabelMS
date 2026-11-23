@@ -4,12 +4,12 @@
 
 PrintLabelMS — самостоятельное PyQt5-приложение для печати этикеток из МойСклада:
 загрузка ассортимента, кастомных шаблонов этикеток и организации через библиотеку moy_sklad;
-PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и печатается на термопринтере.
+PDF-этикетка конвертируется в JPEG (pypdfium2 + Pillow) и печатается на термопринтере.
 
 ### Стек
 - Python >= 3.12
 - PyQt5>=5.15.6, moy_sklad @ git+https://github.com/gusya1/moy_sklad@v0.1.0,
-  pydantic>=2.11, requests>=2.32, pdf2image>=1.17.0
+  pydantic>=2.11, requests>=2.32, pypdfium2>=5.15, Pillow>=13
 - Сборка: hatchling (editable-установка); тесты: pytest; линт: ruff (line-length 121)
 
 ## 2. Окружение
@@ -17,7 +17,7 @@ PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и
 - Перед запуском GUI сгенерировать UI из форм: `python src/gui/__build__.py`
   (папка `gui/ui/` в gitignore).
 - Токен МойСклада хранится только в settings.json (gitignored), не в коде, git и фикстурах.
-- Версия приложения 0.2.0; релиз по тегу.
+- Версия приложения 0.3.0; релиз — тег vX.Y.Z (CI публикует GitHub Release).
 
 ## 3. Документация
 - Документация проекта находится в docs/.
@@ -35,12 +35,13 @@ PDF-этикетка конвертируется в JPEG (poppler/pdf2image) и
 
 ## 5. Карта проекта
 src-layout:
-- `src/PrintLabelMS/__main__.py` — точка входа: QApplication, чтение settings.json,
-  MoySkladManager(token), загрузка ассортимента/шаблонов/организации, MainWindow;
+- `src/PrintLabelMS/__main__.py` — точка входа: main(), argparse, --version, подкоманды update/rollback,
+  запуск GUI с ленивым импортом Qt;
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
   `PrintHandler` (размер/ориентация/смещения/копии, print_pdf: JPEG → QPixmap → QPrinter);
 - `src/config/__init__.py` — pydantic-модели Config/PrinterConfig/LabelFormat/Orientation
   и read_config (settings.json);
+- `src/config/migrations.py` — CURRENT_SCHEMA_VERSION и MIGRATIONS (N → N+1), migrate(raw);
 - `src/gui/MainWindow.py` — окно: список товаров с фильтром, выбор формата этикетки и
   шаблона, печать в фоне (threading + QProgressDialog), диалоги ошибок;
 - `src/gui/splash_screen.py`, `src/gui/message_box.py` — сплэш и фатальные ошибки;
@@ -58,30 +59,31 @@ src-layout:
   (MoySkladClient): MoySkladManager(token) с get_assortment,
   get_custom_templates, get_organizations (библиотечный MoySkladOrganization),
   request_label(product, organization, template);
+- `src/updater/paths.py` — XDG-пути установки (versions/current/previous, конфиг, лог, кэш);
+- `src/updater/release.py` — GitHub Releases (latest / по тегу), сравнение версий, выбор ассетов;
+- `src/updater/installer.py` — update/rollback: снимок конфига, SHA256, venv во временном
+  каталоге, health-check, переключение симлинков, ротация двух версий, лог;
 - `src/moysklad_manager/exceptions.py` — MoySkladError;
 - `src/pdf_to_image_converter/converter.py` — Converter.convert_pdf_to_jpeg
-  (pdf2image, poppler_path), ConvertError;
+  (pypdfium2, scale = resolution / 72), ConvertError;
 - `src/resources/__init__.py` — get_resource_path (pictures/).
-Внешнее: poppler для Windows не в git — скачивается
-`scripts/download_poppler_windows.bat` в
-`build/windows/external/poppler-25.07.0/` (poppler_path в settings.json);
-Linux — `scripts/download_poppler_linux.sh`;
 `settings_example.json` → settings.json с токеном;
 `start.bat`; `.vscode/launch.json`.
-Тесты: tests/test_build.py, test_config.py, test_converter.py, test_moysklad_manager.py.
+- `scripts/install.sh` — бутстрап установки на Linux без sudo (preflight, wheel+SHA256SUMS из GitHub Releases, venv, health-check, симлинки, конфиг-шаблон, launcher, .desktop); флаги --version X.Y.Z, --force;
+Тесты: tests/test_build.py, test_config.py, test_config_migrations.py, test_cli.py, test_converter.py, test_moysklad_manager.py, test_updater.py.
 
 ## 6. Правила проекта
 - Репозиторий публичный: никаких токенов, реальных данных клиентов и внутренних URL в коде, доках и фикстурах; токен только в gitignored settings.json (пример — settings_example.json с заглушкой).
 
 ## 7. Версионирование
-- Версия в pyproject.toml; релиз — тег vX.Y.Z (текущий: v0.2.0).
+- Версия в pyproject.toml; релиз — тег vX.Y.Z (текущий: v0.3.0): CI по тегу публикует GitHub Release с wheel, install.sh и SHA256SUMS.
 
 ## 8. Тестирование и проверка
 После изменения кода, строго по порядку:
 1) `pytest`;
 2) `ruff check .`.
 При изменении mainwindow.ui сначала регенерировать `gui/ui/` (`python src/gui/__build__.py`).
-В CI те же шаги на Python 3.12–3.14 (ветка master).
+В CI те же шаги + сборка wheel со smoke-тестом в чистом venv (Python 3.14) на Python 3.12–3.14 (ветка master); по тегу vX.Y.Z — job публикации GitHub Release.
 
 ## 9. Эскалация
 - Команды запускаются локально (pytest, ruff).
