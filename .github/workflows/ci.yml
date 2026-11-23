@@ -39,7 +39,7 @@ jobs:
           python-version: "3.14"
       - name: Build wheel
         run: |
-          pip install build
+          pip install build PyQt5
           python src/gui/__build__.py
           python -m build --wheel
       - name: Smoke test
@@ -67,7 +67,7 @@ jobs:
           fi
       - name: Build wheel
         run: |
-          pip install build
+          pip install build PyQt5
           python src/gui/__build__.py
           python -m build --wheel
       - name: SHA256SUMS
