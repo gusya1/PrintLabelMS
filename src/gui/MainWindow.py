@@ -1,9 +1,5 @@
-import json
-import os
 import sys
 import threading
-from datetime import datetime, timedelta
-from pathlib import Path
 
 import resources
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -11,9 +7,9 @@ from PyQt5.QtWidgets import QMainWindow, QProgressDialog
 
 
 from .ui.mainwindow_ui import Ui_MainWindow
+from gui.update_service import UpdateService
 
 from PrintLabelMS.print_handler import PrintHandler
-import updater
 
 
 def get_label_format_string(label_format):
@@ -24,8 +20,6 @@ def get_label_format_string(label_format):
 class MainWindow(QMainWindow):
     progress_changed = QtCore.pyqtSignal(str, int)
     error_expected = QtCore.pyqtSignal(str)
-    update_check_result = QtCore.pyqtSignal(str)
-    update_finished = QtCore.pyqtSignal(bool, str)
 
     def __init__(
         self,
@@ -61,11 +55,10 @@ class MainWindow(QMainWindow):
         self.ui.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
         self.progress_changed.connect(self.__change_progress)
         self.error_expected.connect(self.__show_error_dialog)
-        self.update_check_result.connect(self.__onUpdateCheckResult)
-        self.update_finished.connect(self.__onUpdateFinished)
 
         self.__organization = organization
         self.__printing = False
+        self.progress_dialog = None
         self.__setup_update_ui(check_updates)
 
     def reset_print_settings(self, label_format, count):
@@ -146,44 +139,16 @@ class MainWindow(QMainWindow):
         self.statusBar().addWidget(self.__update_button)
         if not check_updates:
             return
-        if not updater.paths.current_link().is_symlink():
-            return
-        thread = threading.Thread(target=self.__check_updates_worker, daemon=True)
-        thread.start()
-
-    def __read_update_cache(self):
-        cache_file = updater.paths.cache_dir() / "update_check.json"
-        try:
-            data = json.loads(cache_file.read_text(encoding="utf-8"))
-            checked_at = datetime.fromisoformat(data["checked_at"])
-        except Exception:
-            return None, None
-        return data, checked_at
-
-    def __check_updates_worker(self):
-        cache_file = updater.paths.cache_dir() / "update_check.json"
-        try:
-            data, checked_at = self.__read_update_cache()
-            if data is None or datetime.now() - checked_at >= timedelta(hours=24):
-                info = updater.release.fetch_latest_release()
-                data = {"checked_at": datetime.now().isoformat(), "tag_name": info.get("tag_name", "")}
-                cache_file.parent.mkdir(parents=True, exist_ok=True)
-                cache_file.write_text(json.dumps(data), encoding="utf-8")
-            self.update_check_result.emit(data.get("tag_name"))
-        except Exception:
-            pass
+        self.__update_service = UpdateService(self)
+        self.__update_service.update_available.connect(self.__onUpdateAvailable)
+        self.__update_service.progress_changed.connect(self.__change_progress)
+        self.__update_service.finished.connect(self.__onUpdateFinished)
+        self.__update_service.start_check()
 
     @QtCore.pyqtSlot(str)
-    def __onUpdateCheckResult(self, tag):
-        try:
-            current_dir = Path(os.readlink(updater.paths.current_link()))
-            current = updater.parse_version("v{}".format(current_dir.name))
-            new = updater.parse_version(tag)
-        except Exception:
-            return
-        if updater.compare_versions(new, current) > 0:
-            self.statusBar().showMessage("Доступна новая версия {}".format(tag), 10000)
-            self.__update_button.setEnabled(True)
+    def __onUpdateAvailable(self, tag):
+        self.statusBar().showMessage("Доступна новая версия {}".format(tag), 10000)
+        self.__update_button.setEnabled(True)
 
     @QtCore.pyqtSlot()
     def __onUpdateButtonClicked(self):
@@ -192,23 +157,15 @@ class MainWindow(QMainWindow):
             return
         self.progress_dialog = QProgressDialog("Обновление...", None, 0, 3)
         self.progress_dialog.setAutoClose(True)
-        thread = threading.Thread(target=self.__update_worker)
-        thread.start()
+        self.__update_service.update()
         self.progress_dialog.exec_()
-        thread.join()
-
-    def __update_worker(self):
-        try:
-            updater.update()
-            self.progress_changed.emit("Обновление завершено", 3)
-            self.update_finished.emit(True, "")
-        except Exception as e:
-            self.error_expected.emit(str(e))
-            self.update_finished.emit(False, str(e))
 
     @QtCore.pyqtSlot(bool, str)
     def __onUpdateFinished(self, success, message):
+        if self.progress_dialog is not None:
+            self.progress_dialog.close()
         if not success:
+            self.error_expected.emit(message)
             return
         QtCore.QProcess.startDetached(sys.executable, ["-m", "PrintLabelMS"])
         self.close()

@@ -44,6 +44,9 @@ src-layout:
 - `src/config/migrations.py` — CURRENT_SCHEMA_VERSION и MIGRATIONS (N → N+1), migrate(raw);
 - `src/gui/MainWindow.py` — окно: список товаров с фильтром, выбор формата этикетки и
   шаблона, печать в фоне (threading + QProgressDialog), диалоги ошибок;
+- `src/gui/update_service.py` — UpdateService: фоновая проверка новой версии
+  (кэш 24 ч) и update/rollback в отдельном потоке, общается с GUI через сигналы
+  (update_available, progress_changed, finished);
 - `src/gui/splash_screen.py`, `src/gui/message_box.py` — сплэш и фатальные ошибки;
 - `src/gui/__build__.py` — генерация `gui/ui/*_ui.py` из `.ui`-форм (PyQt5.uic);
   `mainwindow.ui` — исходная форма;
@@ -70,7 +73,7 @@ src-layout:
 `settings_example.json` → settings.json с токеном;
 `start.bat`; `.vscode/launch.json`.
 - `scripts/install.sh` — бутстрап установки на Linux без sudo (preflight, wheel+SHA256SUMS из GitHub Releases, venv, health-check, симлинки, конфиг-шаблон, launcher, .desktop); флаги --version X.Y.Z, --force;
-Тесты: tests/test_build.py, test_config.py, test_config_migrations.py, test_cli.py, test_converter.py, test_moysklad_manager.py, test_updater.py.
+Тесты: tests/test_build.py, test_config.py, test_config_migrations.py, test_cli.py, test_converter.py, test_moysklad_manager.py, test_update_service.py, test_updater.py.
 
 ## 6. Правила проекта
 - Репозиторий публичный: никаких токенов, реальных данных клиентов и внутренних URL в коде, доках и фикстурах; токен только в gitignored settings.json (пример — settings_example.json с заглушкой).
