@@ -1,27 +1,25 @@
 import argparse
 import importlib.metadata
-import os
 import sys
 from pathlib import Path
 
 import updater
+from updater.paths import APP_NAME, config_path
 
 
 def _app_version():
     try:
-        return importlib.metadata.version("printlabelms")
+        return importlib.metadata.version(APP_NAME)
     except importlib.metadata.PackageNotFoundError:
         return "unknown"
 
 
 def _default_settings_path():
-    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
-    base = Path(xdg_config_home).expanduser() if xdg_config_home else Path.home() / ".config"
-    return base / "printlabelms" / "settings.json"
+    return config_path()
 
 
 def _print_version():
-    print("printlabelms {}".format(_app_version()))
+    print("{} {}".format(APP_NAME, _app_version()))
     print("Python {}".format(sys.version.split()[0]))
     for package in ("PyQt5", "pydantic", "pypdfium2"):
         try:
@@ -94,7 +92,7 @@ def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     if argv and argv[0] in ("update", "rollback"):
         command = argv.pop(0)
-        parser = argparse.ArgumentParser(prog="printlabelms {}".format(command))
+        parser = argparse.ArgumentParser(prog="{} {}".format(APP_NAME, command))
         if command == "update":
             parser.add_argument("--to", dest="target_version", default=None, metavar="X.Y.Z")
             parser.add_argument("--check", action="store_true")
@@ -102,9 +100,9 @@ def main(argv=None):
             return _cmd_update(args)
         args = parser.parse_args(argv)
         return _cmd_rollback(args)
-    parser = argparse.ArgumentParser(prog="printlabelms")
+    parser = argparse.ArgumentParser(prog=APP_NAME)
     parser.add_argument("settings", nargs="?", default=None,
-                        help="Путь к settings.json (по умолчанию ~/.config/printlabelms/settings.json)")
+                        help="Путь к settings.json (по умолчанию ~/.config/{}/settings.json)".format(APP_NAME))
     parser.add_argument("--version", action="store_true", help="Версии приложения и зависимостей")
     args = parser.parse_args(argv)
     if args.version:

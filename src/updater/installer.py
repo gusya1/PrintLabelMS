@@ -52,7 +52,7 @@ def _snapshot_config(version_dir):
 
 
 def _health_check(venv_dir):
-    result = _run([str(venv_dir / "bin" / "printlabelms"), "--version"])
+    result = _run([str(venv_dir / "bin" / paths.APP_NAME), "--version"])
     if result.returncode != 0:
         raise UpdaterError("Health-check --version провален: {}".format(result.stderr.strip()))
     env = dict(os.environ)

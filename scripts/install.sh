@@ -72,8 +72,8 @@ command -v curl >/dev/null 2>&1 || die "curl не найден (sudo apt install
 
 # --- уже установлена?
 if [[ -L "$current_link" ]] && [[ $force -eq 0 ]]; then
-    echo "PrintLabelMS уже установлен. Делегирую обновление: current/bin/printlabelms update"
-    exec "$(readlink -f "$current_link")/bin/printlabelms" update
+    echo "PrintLabelMS уже установлен. Делегирую обновление: current/bin/${APP} update"
+    exec "$(readlink -f "$current_link")/bin/${APP}" update
 fi
 
 # --- релиз
@@ -86,7 +86,7 @@ fi
 info="$(curl -fsSL "$api_url")" || die "Не удалось получить информацию о релизе (${api_url}). Проверьте сеть и наличие релиза."
 tag_name="$(printf '%s' "$info" | python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])')"
 version="${tag_name#v}"
-wheel_name="printlabelms-${version}-py3-none-any.whl"
+wheel_name="${APP}-${version}-py3-none-any.whl"
 
 # --- скачивание и проверка
 mkdir -p "$cache_dir"
@@ -113,8 +113,8 @@ mkdir -p "$tmp_dir"
 python3 -m venv "${tmp_dir}/venv" || die "Не удалось создать venv. На Debian/Ubuntu: sudo apt install python3-venv."
 "${tmp_dir}/venv/bin/pip" install --upgrade "${cache_dir}/${wheel_name}" \
     || die "pip install провален (нужны git и сеть для moy_sklad)."
-"${tmp_dir}/venv/bin/printlabelms" --version >/dev/null \
-    || die "Health-check провален: printlabelms --version."
+"${tmp_dir}/venv/bin/${APP}" --version >/dev/null \
+    || die "Health-check провален: ${APP} --version."
 QT_QPA_PLATFORM=offscreen "${tmp_dir}/venv/bin/python" -c 'import gui.ui.mainwindow_ui' \
     || die "Health-check провален: импорт GUI (gui/ui отсутствует в wheel?)."
 
@@ -168,7 +168,7 @@ fi
 
 # --- launcher
 mkdir -p "$bin_dir"
-ln -sfn "${data_dir}/current/bin/printlabelms" "${bin_dir}/${APP}"
+ln -sfn "${data_dir}/current/bin/${APP}" "${bin_dir}/${APP}"
 
 # --- иконка
 icon_src="$("${target_dir}/venv/bin/python" -c 'import os, resources; print(os.path.join(os.path.dirname(resources.__file__), "pictures", "icon.png"))')"
@@ -188,5 +188,5 @@ Categories=Utility;
 EOF
 
 echo "PrintLabelMS ${version} установлен."
-echo "Запуск: printlabelms (или ${bin_dir}/${APP})"
+echo "Запуск: ${APP} (или ${bin_dir}/${APP})"
 echo "Конфиг: ${config_dir}/settings.json — вставьте токен МойСклада перед первым запуском."

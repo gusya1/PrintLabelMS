@@ -3,6 +3,7 @@ import re
 import requests
 
 from updater import UpdaterError
+from updater.paths import APP_NAME
 
 REPO = "gusya1/PrintLabelMS"
 API_BASE = "https://api.github.com/repos/{}/releases".format(REPO)
@@ -48,6 +49,6 @@ def select_asset(assets, name):
 def select_wheel(assets):
     for asset in assets:
         name = asset.get("name", "")
-        if name.startswith("printlabelms-") and name.endswith("-py3-none-any.whl"):
+        if name.startswith(APP_NAME + "-") and name.endswith("-py3-none-any.whl"):
             return asset
     raise UpdaterError("Wheel py3-none-any отсутствует в релизе")
