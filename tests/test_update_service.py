@@ -66,6 +66,24 @@ def test_check_emits_newer_version(qapp, env, monkeypatch):
     assert tags[0] == "v0.2.0"
 
 
+def test_check_runs_on_every_start(qapp, env, monkeypatch):
+    _install(env, "0.1.0")
+    calls = []
+
+    def fake_fetch():
+        calls.append(1)
+        return {"tag_name": "v0.2.0"}
+
+    monkeypatch.setattr("updater.release.fetch_latest_release", fake_fetch)
+    service = UpdateService()
+    tags = []
+    service.update_available.connect(lambda tag: tags.append(tag))
+    service.start_check()
+    assert _wait_for(qapp, lambda: len(tags) == 1)
+    service.start_check()
+    assert _wait_for(qapp, lambda: len(calls) == 2 and len(tags) == 2)
+
+
 def test_check_no_emit_when_not_newer(qapp, env, monkeypatch):
     _install(env, "0.2.0")
     monkeypatch.setattr("updater.release.fetch_latest_release", lambda: {"tag_name": "v0.2.0"})

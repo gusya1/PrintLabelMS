@@ -73,9 +73,9 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
 `previous` с health-check; при провале прежние `current` и конфиг возвращаются.
 
 Проверку новой версии и выполнение update/rollback ведёт сервис
-`UpdateService` (`src/gui/update_service.py`): фоновая проверка раз в 24 ч
-(кэш `~/.cache/printlabelms/update_check.json`, флаг `check_updates`)
-эмитит доступную версию, update/rollback выполняется в отдельном потоке
+`UpdateService` (`src/gui/update_service.py`): фоновая проверка при
+каждом старте (флаг `check_updates`) эмитит доступную версию,
+update/rollback выполняется в отдельном потоке
 с сигналами прогресса и результата. Сервис также отдаёт текущую версию
 активной установки (`current_version()`: из симлинка `current`, иначе из
 метаданных пакета). GUI (статус-бар с версией + кнопка «Обновить»)

@@ -1,7 +1,5 @@
 import importlib.metadata
-import json
 import os
-from datetime import datetime, timedelta
 from pathlib import Path
 from threading import Thread
 
@@ -52,24 +50,10 @@ class UpdateService(QtCore.QObject):
         self._update_thread = Thread(target=self.__rollback_worker, daemon=True)
         self._update_thread.start()
 
-    def __read_update_cache(self, cache_file):
-        try:
-            data = json.loads(cache_file.read_text(encoding="utf-8"))
-            checked_at = datetime.fromisoformat(data["checked_at"])
-        except Exception:
-            return None, None
-        return data, checked_at
-
     def __check_worker(self):
-        cache_file = updater.paths.cache_dir() / "update_check.json"
         try:
-            data, checked_at = self.__read_update_cache(cache_file)
-            if data is None or datetime.now() - checked_at >= timedelta(hours=24):
-                info = updater.release.fetch_latest_release()
-                data = {"checked_at": datetime.now().isoformat(), "tag_name": info.get("tag_name", "")}
-                cache_file.parent.mkdir(parents=True, exist_ok=True)
-                cache_file.write_text(json.dumps(data), encoding="utf-8")
-            tag = data.get("tag_name", "")
+            info = updater.release.fetch_latest_release()
+            tag = info.get("tag_name", "")
             if self.__is_newer(tag):
                 self.update_available.emit(tag)
         except Exception:

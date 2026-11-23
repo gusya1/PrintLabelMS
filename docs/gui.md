@@ -45,7 +45,7 @@
 ### Обновления
 
 `src/gui/update_service.py`, `UpdateService`. Фоновая проверка новой
-версии раз в 24 ч (флаг `check_updates`), update/rollback — в
+версии при каждом старте (флаг `check_updates`), update/rollback — в
 отдельном потоке; общается с GUI через сигналы
 (`update_available`, `progress_changed`, `finished`). Статус-бар
 показывает текущую версию и кнопку «Обновить»; после успешного
