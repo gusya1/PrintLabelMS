@@ -65,8 +65,7 @@ def _run_gui(settings_path):
 
     def fatal_error(message):
         gui.message_box.fatal_error(str(message))
-        app.exit(1)
-        sys.exit(1)
+        return 1
 
     try:
         config_model = read_config(settings_path)
@@ -85,7 +84,7 @@ def _run_gui(settings_path):
         splash.finish(window)
         return app.exec()
     except (MoySkladError, ValidationError, OSError, RuntimeError) as e:
-        fatal_error(e)
+        return fatal_error(e)
 
 
 def main(argv=None):
