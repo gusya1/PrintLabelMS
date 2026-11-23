@@ -72,7 +72,7 @@ src-layout:
 - `src/resources/__init__.py` — get_resource_path (pictures/).
 `settings_example.json` → settings.json с токеном;
 `start.bat`; `.vscode/launch.json`.
-- `scripts/install.sh` — бутстрап установки на Linux без sudo (preflight, wheel+SHA256SUMS из GitHub Releases, venv, health-check, симлинки, конфиг-шаблон, launcher, .desktop); флаги --version X.Y.Z, --force;
+- `scripts/install.sh` — бутстрап установки на Linux без sudo (preflight, wheel+SHA256SUMS из GitHub Releases, venv, health-check, симлинки, конфиг-шаблон, launcher + PATH в ~/.bashrc, .desktop: меню и рабочий стол); флаги --version X.Y.Z, --force;
 Тесты: tests/test_build.py, test_config.py, test_config_migrations.py, test_cli.py, test_converter.py, test_moysklad_manager.py, test_update_service.py, test_updater.py.
 
 ## 6. Правила проекта

@@ -72,8 +72,8 @@ command -v curl >/dev/null 2>&1 || die "curl не найден (sudo apt install
 
 # --- уже установлена?
 if [[ -L "$current_link" ]] && [[ $force -eq 0 ]]; then
-    echo "PrintLabelMS уже установлен. Делегирую обновление: current/bin/${APP} update"
-    exec "$(readlink -f "$current_link")/bin/${APP}" update
+    echo "PrintLabelMS уже установлен. Делегирую обновление: current/venv/bin/${APP} update"
+    exec "$(readlink -f "$current_link")/venv/bin/${APP}" update
 fi
 
 # --- релиз
@@ -168,15 +168,28 @@ fi
 
 # --- launcher
 mkdir -p "$bin_dir"
-ln -sfn "${data_dir}/current/bin/${APP}" "${bin_dir}/${APP}"
+ln -sfn "${data_dir}/current/venv/bin/${APP}" "${bin_dir}/${APP}"
+
+# --- PATH
+case ":${PATH}:" in
+    *":${bin_dir}:"*) ;;
+    *)
+        if ! grep -qs "printlabelms-path" "${HOME}/.bashrc"; then
+            printf '\n# printlabelms-path\nexport PATH="%s:$PATH"\n' "$bin_dir" >> "${HOME}/.bashrc"
+        fi
+        echo "~/.local/bin добавлен в PATH (~/.bashrc); для текущего терминала: source ~/.bashrc."
+        ;;
+esac
 
 # --- иконка
 icon_src="$("${target_dir}/venv/bin/python" -c 'import os, resources; print(os.path.join(os.path.dirname(resources.__file__), "pictures", "icon.png"))')"
 cp "$icon_src" "$icon_path"
 
-# --- .desktop
-mkdir -p "$(dirname "$desktop_file")"
-cat > "$desktop_file" <<EOF
+# --- .desktop (меню + рабочий стол)
+write_desktop() {
+    local dest="$1"
+    mkdir -p "$(dirname "$dest")"
+    cat > "$dest" <<EOF
 [Desktop Entry]
 Type=Application
 Name=PrintLabelMS
@@ -186,7 +199,16 @@ Icon=${icon_path}
 Terminal=false
 Categories=Utility;
 EOF
+    chmod +x "$dest"
+}
+write_desktop "$desktop_file"
+desktop_target="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+[[ -n "$desktop_target" ]] || desktop_target="${HOME}/Desktop"
+write_desktop "${desktop_target}/${APP}.desktop"
+if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database "$(dirname "$desktop_file")"
+fi
 
 echo "PrintLabelMS ${version} установлен."
-echo "Запуск: ${APP} (или ${bin_dir}/${APP})"
+echo "Запуск: ${APP} (или ${bin_dir}/${APP}); ярлык на рабочем столе: ${desktop_target}/${APP}.desktop"
 echo "Конфиг: ${config_dir}/settings.json — вставьте токен МойСклада перед первым запуском."

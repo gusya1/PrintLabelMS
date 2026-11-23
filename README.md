@@ -27,8 +27,10 @@ curl -fsSLO https://github.com/gusya1/PrintLabelMS/releases/latest/download/inst
 - скачивает wheel и `SHA256SUMS` из GitHub Releases, проверяет SHA256;
 - создаёт изолированный venv в `~/.local/share/printlabelms/versions/<X.Y.Z>/venv`
   и переключает симлинк `current`;
-- создаёт шаблон конфига `~/.config/printlabelms/settings.json` (если его нет),
-  launcher `~/.local/bin/printlabelms` и `.desktop`-файл с иконкой.
+- создаёт шаблон конфига `~/.config/printlabelms/settings.json` (если его нет);
+- создаёт launcher `~/.local/bin/printlabelms` (при отсутствии каталога в PATH
+  добавляет его в `~/.bashrc`) и `.desktop` с иконкой: запись в меню
+  приложения и ярлык на рабочем столе.
 
 Перед первым запуском вставьте токен МойСклада в
 `~/.config/printlabelms/settings.json`.
