@@ -77,5 +77,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "${GITHUB_REF#refs/tags/}" \
-            "PrintLabelMS ${GITHUB_REF#refs/tags/}" \
+            --title "PrintLabelMS ${GITHUB_REF#refs/tags/}" \
+            --notes "PrintLabelMS ${GITHUB_REF#refs/tags/}" \
+            --verify-tag \
             dist/*.whl scripts/install.sh dist/SHA256SUMS
