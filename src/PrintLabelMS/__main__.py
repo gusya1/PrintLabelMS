@@ -1,62 +1,117 @@
-from PyQt5 import QtWidgets
-
+import argparse
+import importlib.metadata
+import os
 import sys
+from pathlib import Path
 
-from pydantic import ValidationError
-
-import gui.splash_screen
-import gui.message_box
-from gui.MainWindow import MainWindow
-import config
-from moysklad_manager.exceptions import MoySkladError
-from moysklad_manager.manager import MoySkladManager
-from PrintLabelMS.print_handler import PrintHandler
-from pdf_to_image_converter.converter import Converter
+import updater
 
 
-def fatal_error(message):
-    gui.message_box.fatal_error(message)
-    app.exit(1)
-    exit()
-
-
-if __name__ == '__main__':
+def _app_version():
     try:
-        app = QtWidgets.QApplication(sys.argv)
+        return importlib.metadata.version("printlabelms")
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown"
 
-        if len(app.arguments()) != 2:
-            print("Invalid arguments.\nUsage: python src/PrintLabelMS/__main__.py <setting_file>")
-            exit(1)
 
-        splash = gui.splash_screen.get_splash_screen()
-        splash.show()
+def _default_settings_path():
+    xdg_config_home = os.environ.get("XDG_CONFIG_HOME")
+    base = Path(xdg_config_home).expanduser() if xdg_config_home else Path.home() / ".config"
+    return base / "printlabelms" / "settings.json"
 
-        config_path = app.arguments()[1]
-        config_model = config.read_config(config_path)
 
+def _print_version():
+    print("printlabelms {}".format(_app_version()))
+    print("Python {}".format(sys.version.split()[0]))
+    for package in ("PyQt5", "pydantic", "pypdfium2"):
+        try:
+            version = importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:
+            version = "unknown"
+        print("{} {}".format(package, version))
+    return 0
+
+
+def _cmd_update(args):
+    try:
+        return updater.update(target_version=args.target_version, check_only=args.check)
+    except updater.UpdaterError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+
+
+def _cmd_rollback(args):
+    try:
+        return updater.rollback()
+    except updater.UpdaterError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+
+
+def _run_gui(settings_path):
+    from PyQt5 import QtWidgets
+    from pydantic import ValidationError
+
+    import gui.message_box
+    import gui.splash_screen
+    from config import read_config
+    from gui.MainWindow import MainWindow
+    from moysklad_manager.exceptions import MoySkladError
+    from moysklad_manager.manager import MoySkladManager
+    from PrintLabelMS.print_handler import PrintHandler
+    from pdf_to_image_converter.converter import Converter
+
+    app = QtWidgets.QApplication(sys.argv)
+    splash = gui.splash_screen.get_splash_screen()
+    splash.show()
+
+    def fatal_error(message):
+        gui.message_box.fatal_error(str(message))
+        app.exit(1)
+        sys.exit(1)
+
+    try:
+        config_model = read_config(settings_path)
         manager = MoySkladManager(config_model.moy_sklad_token)
-
         converter = Converter()
         print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
-
         assortment = manager.get_assortment()
         templates = manager.get_custom_templates()
-
         organizations = manager.get_organizations()
         if not organizations:
             raise RuntimeError("Организация не найдена")
         organization = organizations[0]
-
-        window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates, organization)
+        window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates, organization,
+                            check_updates=config_model.check_updates)
         window.show()
-
         splash.finish(window)
-        app.exec()
-    except MoySkladError as e:
+        return app.exec()
+    except (MoySkladError, ValidationError, OSError, RuntimeError) as e:
         fatal_error(e)
-    except ValidationError as e:
-        fatal_error(e)
-    except OSError as e:
-        fatal_error(e)
-    except RuntimeError as e:
-        fatal_error(e)
+
+
+def main(argv=None):
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in ("update", "rollback"):
+        command = argv.pop(0)
+        parser = argparse.ArgumentParser(prog="printlabelms {}".format(command))
+        if command == "update":
+            parser.add_argument("--to", dest="target_version", default=None, metavar="X.Y.Z")
+            parser.add_argument("--check", action="store_true")
+            args = parser.parse_args(argv)
+            return _cmd_update(args)
+        args = parser.parse_args(argv)
+        return _cmd_rollback(args)
+    parser = argparse.ArgumentParser(prog="printlabelms")
+    parser.add_argument("settings", nargs="?", default=None,
+                        help="Путь к settings.json (по умолчанию ~/.config/printlabelms/settings.json)")
+    parser.add_argument("--version", action="store_true", help="Версии приложения и зависимостей")
+    args = parser.parse_args(argv)
+    if args.version:
+        return _print_version()
+    settings_path = Path(args.settings) if args.settings else _default_settings_path()
+    return _run_gui(settings_path)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

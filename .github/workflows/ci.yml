@@ -3,11 +3,16 @@ name: CI
 on:
   push:
     branches: [master]
+    tags: ["v*"]
   pull_request:
+
+permissions:
+  contents: write
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
     strategy:
       fail-fast: false
       matrix:
@@ -23,3 +28,54 @@ jobs:
         run: ruff check .
       - name: Pytest
         run: pytest
+
+  wheel-smoke:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Build wheel
+        run: |
+          pip install build
+          python src/gui/__build__.py
+          python -m build --wheel
+      - name: Smoke test
+        run: |
+          python -m venv smoke-venv
+          ./smoke-venv/bin/pip install dist/*.whl
+          ./smoke-venv/bin/printlabelms --version
+          QT_QPA_PLATFORM=offscreen ./smoke-venv/bin/python -c "import gui.ui.mainwindow_ui"
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Check tag matches version
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          version="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          if [ "$tag" != "v$version" ]; then
+            echo "Тег $tag не совпадает с версией $version в pyproject.toml" >&2
+            exit 1
+          fi
+      - name: Build wheel
+        run: |
+          pip install build
+          python src/gui/__build__.py
+          python -m build --wheel
+      - name: SHA256SUMS
+        run: sha256sum dist/*.whl > dist/SHA256SUMS
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF#refs/tags/}" \
+            "PrintLabelMS ${GITHUB_REF#refs/tags/}" \
+            dist/*.whl scripts/install.sh dist/SHA256SUMS

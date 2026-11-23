@@ -5,3 +5,6 @@ __pycache__/
 build/windows/external/
 src/gui/ui/
 settings.json
+settings.json.bak-*
+settings.json.tmp
+dist/
