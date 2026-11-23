@@ -48,43 +48,46 @@ def _cmd_rollback(args):
 
 def _run_gui(settings_path):
     from PyQt5 import QtWidgets
-    from pydantic import ValidationError
 
     import gui.message_box
     import gui.splash_screen
-    from config import read_config
-    from gui.MainWindow import MainWindow
-    from moysklad_manager.exceptions import MoySkladError
-    from moysklad_manager.manager import MoySkladManager
     from PrintLabelMS.print_handler import PrintHandler
+    from PrintLabelMS.startup_loader import StartupLoader
+    from gui.MainWindow import MainWindow
     from pdf_to_image_converter.converter import Converter
 
     app = QtWidgets.QApplication(sys.argv)
     splash = gui.splash_screen.get_splash_screen()
     splash.show()
+    exit_code = 0
 
-    def fatal_error(message):
-        gui.message_box.fatal_error(str(message))
-        return 1
-
-    try:
-        config_model = read_config(settings_path)
-        manager = MoySkladManager(config_model.moy_sklad_token)
-        converter = Converter()
-        print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
-        assortment = manager.get_assortment()
-        templates = manager.get_custom_templates()
-        organizations = manager.get_organizations()
-        if not organizations:
-            raise RuntimeError("Организация не найдена")
-        organization = organizations[0]
-        window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates, organization,
-                            check_updates=config_model.check_updates)
-        window.show()
+    def on_loaded(bundle):
+        nonlocal exit_code
+        config_model, manager, assortment, templates, organization = bundle
+        try:
+            converter = Converter()
+            print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
+            window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates,
+                                organization, check_updates=config_model.check_updates)
+            window.show()
+        except Exception as e:
+            gui.message_box.fatal_error(str(e))
+            exit_code = 1
+            app.quit()
+            return
         splash.finish(window)
-        return app.exec()
-    except (MoySkladError, ValidationError, OSError, RuntimeError) as e:
-        return fatal_error(e)
+
+    def on_error(message):
+        nonlocal exit_code
+        gui.message_box.fatal_error(str(message))
+        exit_code = 1
+        app.quit()
+
+    loader = StartupLoader(settings_path)
+    loader.loaded.connect(on_loaded)
+    loader.error.connect(on_error)
+    loader.start()
+    return app.exec() or exit_code
 
 
 def main(argv=None):

@@ -15,7 +15,9 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
    при изменении схемы применяются миграции (`src/config/migrations.py`),
    файл перезаписывается с бэкапом `settings.json.bak-<timestamp>`;
    версия новее поддерживаемой — понятная ошибка.
-2. Токен передаётся в `MoySkladManager`; через него загружаются ассортимент
+2. При старте конфиг и данные МойСклада загружаются в фоновом потоке
+   (`StartupLoader`, сигналы `loaded`/`error`). Токен передаётся в
+   `MoySkladManager`; через него загружаются ассортимент
    (`get_assortment`), кастомные шаблоны (`get_custom_templates`)
    и организации (`get_organizations`, используется первая).
 3. `MainWindow` показывает список товаров с фильтром, выбор формата этикетки
@@ -80,8 +82,12 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
 - `src/config/__init__.py` — модели `Config`, `PrinterConfig`, `LabelFormat`,
   `Orientation`; `read_config(file_path)`.
 - `src/config/migrations.py` — `CURRENT_SCHEMA_VERSION`, `MIGRATIONS`, `migrate(raw)`;
-- `src/PrintLabelMS/__main__.py` — точка входа: сборка приложения, загрузка данных
-  МойСклада, запуск окна.
+- `src/PrintLabelMS/__main__.py` — точка входа: сборка приложения,
+  запуск окна (загрузку данных ведёт `StartupLoader`).
+- `src/PrintLabelMS/startup_loader.py` — `StartupLoader`: при старте в
+  фоновом потоке загружает конфиг и данные МойСклада; сигналы
+  `loaded(object)` (конфиг, менеджер, ассортимент, шаблоны, организация)
+  и `error(str)`.
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
   `PrintHandler`; контракт печати: PDF → JPEG → QPixmap → QPrinter.
 - `src/updater/paths.py` — XDG-пути установки (versions/current/previous,
