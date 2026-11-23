@@ -99,34 +99,24 @@ expected="$(awk -v f="$wheel_name" '$2 == f {print $1}' "${cache_dir}/SHA256SUMS
 actual="$(sha256sum "${cache_dir}/${wheel_name}" | awk '{print $1}')"
 [[ "$actual" == "${expected,,}" ]] || die "SHA256 не совпадает для ${wheel_name}: ожидалось ${expected}, получено ${actual}."
 
-# --- установка в каталог версии
+# --- установка в каталог версии (venv сразу в финальном пути:
+#     shebang консольных скриптов pip — абсолютный, tmp-переименование его ломало)
 mkdir -p "$versions_dir"
-tmp_dir="${versions_dir}/${version}.tmp-$$"
-cleanup() {
-    if [[ -n "${tmp_dir:-}" && -d "$tmp_dir" ]]; then
-        rm -rf "$tmp_dir"
-    fi
-}
-trap cleanup EXIT
-rm -rf "$tmp_dir"
-mkdir -p "$tmp_dir"
-python3 -m venv "${tmp_dir}/venv" || die "Не удалось создать venv. На Debian/Ubuntu: sudo apt install python3-venv."
-"${tmp_dir}/venv/bin/pip" install --upgrade "${cache_dir}/${wheel_name}" \
-    || die "pip install провален (нужны git и сеть для moy_sklad)."
-"${tmp_dir}/venv/bin/${APP}" --version >/dev/null \
-    || die "Health-check провален: ${APP} --version."
-QT_QPA_PLATFORM=offscreen "${tmp_dir}/venv/bin/python" -c 'import gui.ui.mainwindow_ui' \
-    || die "Health-check провален: импорт GUI (gui/ui отсутствует в wheel?)."
-
 target_dir="${versions_dir}/${version}"
+rm -rf "$target_dir"
+python3 -m venv "${target_dir}/venv" \
+    || { rm -rf "$target_dir"; die "Не удалось создать venv. На Debian/Ubuntu: sudo apt install python3-venv."; }
+"${target_dir}/venv/bin/pip" install --upgrade "${cache_dir}/${wheel_name}" \
+    || { rm -rf "$target_dir"; die "pip install провален (нужны git и сеть для moy_sklad)."; }
+"${target_dir}/venv/bin/${APP}" --version >/dev/null \
+    || { rm -rf "$target_dir"; die "Health-check провален: ${APP} --version."; }
+QT_QPA_PLATFORM=offscreen "${target_dir}/venv/bin/python" -c 'import gui.ui.mainwindow_ui' \
+    || { rm -rf "$target_dir"; die "Health-check провален: импорт GUI (gui/ui отсутствует в wheel?)."; }
+
 if [[ -L "$current_link" ]]; then
     old_target="$(readlink -f "$current_link")"
     ln -sfn "$old_target" "$previous_link"
 fi
-rm -rf "$target_dir"
-mv "$tmp_dir" "$target_dir"
-tmp_dir=""
-trap - EXIT
 rm -f "$current_link"
 ln -s "$target_dir" "$current_link"
 

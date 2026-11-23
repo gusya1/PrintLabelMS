@@ -133,24 +133,25 @@ def update(target_version=None, check_only=False):
     _verify_sha256(wheel_path, sums_path.read_text(encoding="utf-8"))
     versions_dir = paths.versions_dir()
     target_name = "{}.{}.{}".format(*parsed)
+    # venv создаётся сразу в финальном каталоге: shebang консольных скриптов
+    # pip — абсолютный, tmp-переименование оставляло бы его на несуществующем пути
     final_dir = versions_dir / target_name
     if final_dir.exists():
         shutil.rmtree(final_dir)
-    tmp_dir = versions_dir / "{}.tmp-{}".format(target_name, os.getpid())
-    venv_dir = tmp_dir / "venv"
+    venv_dir = final_dir / "venv"
     _run(["python3", "-m", "venv", str(venv_dir)])
     if not (venv_dir / "bin" / "pip").exists():
+        shutil.rmtree(final_dir, ignore_errors=True)
         raise UpdaterError("Не удалось создать venv")
     result = _run([str(venv_dir / "bin" / "pip"), "install", "--upgrade", str(wheel_path)])
     if result.returncode != 0:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(final_dir, ignore_errors=True)
         raise UpdaterError("pip install провален: {}".format(result.stderr.strip()))
     try:
         _health_check(venv_dir)
     except Exception as e:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+        shutil.rmtree(final_dir, ignore_errors=True)
         raise UpdaterError(str(e)) from e
-    os.rename(tmp_dir, final_dir)
     old_target = version_dir
     _switch_link(paths.previous_link(), old_target)
     _switch_link(paths.current_link(), final_dir)

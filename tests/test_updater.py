@@ -134,6 +134,7 @@ def test_update_success(env, installed, fake_release, fake_run, capsys):
     data = env["data"] / "printlabelms"
     assert _link_target(data / "current") == data / "versions" / "0.3.0"
     assert _link_target(data / "previous") == data / "versions" / "0.2.0"
+    assert (data / "versions" / "0.3.0" / "venv").exists()
     snapshot = data / "versions" / "0.2.0" / "settings.json"
     assert snapshot.read_text(encoding="utf-8") == '{"schema_version": 2}'
     log_path = env["state"] / "printlabelms" / "update.log"

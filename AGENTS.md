@@ -64,8 +64,8 @@ src-layout:
   request_label(product, organization, template);
 - `src/updater/paths.py` — XDG-пути установки (versions/current/previous, конфиг, лог, кэш);
 - `src/updater/release.py` — GitHub Releases (latest / по тегу), сравнение версий, выбор ассетов;
-- `src/updater/installer.py` — update/rollback: снимок конфига, SHA256, venv во временном
-  каталоге, health-check, переключение симлинков, ротация двух версий, лог;
+- `src/updater/installer.py` — update/rollback: снимок конфига, SHA256, venv в каталоге
+  версии (без tmp-переименования), health-check, переключение симлинков, ротация двух версий, лог;
 - `src/moysklad_manager/exceptions.py` — MoySkladError;
 - `src/pdf_to_image_converter/converter.py` — Converter.convert_pdf_to_jpeg
   (pypdfium2, scale = resolution / 72), ConvertError;
