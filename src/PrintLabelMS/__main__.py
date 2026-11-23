@@ -51,6 +51,7 @@ def _run_gui(settings_path):
 
     import gui.message_box
     import gui.splash_screen
+    import gui.ui_scale
     from PrintLabelMS.print_handler import PrintHandler
     from PrintLabelMS.startup_loader import StartupLoader
     from gui.MainWindow import MainWindow
@@ -64,6 +65,7 @@ def _run_gui(settings_path):
     def on_loaded(bundle):
         nonlocal exit_code
         config_model, manager, assortment, templates, organization = bundle
+        gui.ui_scale.apply_ui_scale(app, config_model.ui_scale)
         try:
             converter = Converter()
             print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)

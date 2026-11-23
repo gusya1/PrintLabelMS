@@ -1,7 +1,8 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "moy_sklad_token": "00000000000000000000000000000000000",
   "check_updates": true,
+  "ui_scale": 1.0,
   "printer": {
     "name": "TSC TE200",
     "resolution": 600

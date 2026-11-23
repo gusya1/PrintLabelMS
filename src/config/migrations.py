@@ -1,4 +1,4 @@
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 3
 
 
 def _migrate_1_to_2(raw):
@@ -7,8 +7,14 @@ def _migrate_1_to_2(raw):
     return raw
 
 
+def _migrate_2_to_3(raw):
+    raw.setdefault("ui_scale", 1.0)
+    return raw
+
+
 MIGRATIONS = {
     1: _migrate_1_to_2,
+    2: _migrate_2_to_3,
 }
 
 

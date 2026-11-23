@@ -34,3 +34,18 @@ def test_label_format_negative_offset_valid():
 def test_printer_config_zero_resolution_invalid():
     with pytest.raises(ValidationError):
         config.PrinterConfig(name="TSC TE200", resolution=0)
+
+
+def test_ui_scale_default_one():
+    cfg = config.Config(moy_sklad_token="token",
+                        printer=config.PrinterConfig(name="p", resolution=300),
+                        label_formats=[])
+    assert cfg.ui_scale == 1.0
+
+
+@pytest.mark.parametrize("value", [0, -0.5])
+def test_ui_scale_non_positive_invalid(value):
+    with pytest.raises(ValidationError):
+        config.Config(moy_sklad_token="token", ui_scale=value,
+                      printer=config.PrinterConfig(name="p", resolution=300),
+                      label_formats=[])

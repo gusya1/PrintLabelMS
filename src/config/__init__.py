@@ -31,6 +31,7 @@ class Config(BaseModel):
     schema_version: int = 1
     moy_sklad_token: str
     check_updates: bool = True
+    ui_scale: float = Field(default=1.0, gt=0)
     printer: PrinterConfig
     label_formats: list[LabelFormat]
 

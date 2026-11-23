@@ -26,7 +26,7 @@ def test_read_config_old_format_without_schema_version(tmp_path):
     _write_old_config(config_file)
     cfg = config.read_config(str(config_file))
     assert isinstance(cfg, Config)
-    assert cfg.schema_version == 2
+    assert cfg.schema_version == 3
     assert cfg.check_updates is True
 
 
@@ -80,6 +80,30 @@ def test_read_config_accepts_path_object(tmp_path):
     _write_old_config(config_file)
     cfg = config.read_config(config_file)
     assert isinstance(cfg, Config)
-    assert cfg.schema_version == 2
+    assert cfg.schema_version == 3
     data = json.loads(config_file.read_text(encoding="utf-8"))
     assert "poppler_path" not in data
+
+
+def _write_v2_config(path: Path) -> None:
+    raw = {
+        "schema_version": 2,
+        "moy_sklad_token": "00000000000000000000000000000000000",
+        "check_updates": True,
+        "printer": {"name": "TSC TE200", "resolution": 600},
+        "label_formats": [
+            {"width": 58, "height": 40, "width_offset": 0, "height_offset": 0, "orientation": "Portrait"},
+        ],
+    }
+    with open(path, "w", encoding="utf-8") as config_file:
+        json.dump(raw, config_file, indent=2)
+
+
+def test_v2_config_migrated_to_3_adds_ui_scale(tmp_path):
+    config_file = tmp_path / "settings.json"
+    _write_v2_config(config_file)
+    cfg = config.read_config(str(config_file))
+    assert cfg.schema_version == 3
+    assert cfg.ui_scale == 1.0
+    data = json.loads(config_file.read_text(encoding="utf-8"))
+    assert data["ui_scale"] == 1.0
