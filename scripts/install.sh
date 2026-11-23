@@ -182,7 +182,7 @@ case ":${PATH}:" in
 esac
 
 # --- иконка
-icon_src="$("${target_dir}/venv/bin/python" -c 'import os, resources; print(os.path.join(os.path.dirname(resources.__file__), "pictures", "icon.png"))')"
+icon_src="$("${target_dir}/venv/bin/python" -c 'from resources import get_resource_path; print(get_resource_path("pictures/icon.png"))')"
 cp "$icon_src" "$icon_path"
 
 # --- .desktop (меню + рабочий стол)
