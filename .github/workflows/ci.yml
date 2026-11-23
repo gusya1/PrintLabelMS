@@ -71,7 +71,11 @@ jobs:
           python src/gui/__build__.py
           python -m build --wheel
       - name: SHA256SUMS
-        run: sha256sum dist/*.whl > dist/SHA256SUMS
+        run: (cd dist && sha256sum *.whl > SHA256SUMS)
+      - name: Delete existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "${GITHUB_REF#refs/tags/}" --yes || true
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
