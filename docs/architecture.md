@@ -21,6 +21,8 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
    `MoySkladManager`; через него загружаются ассортимент
    (`get_assortment`), кастомные шаблоны (`get_custom_templates`)
    и организации (`get_organizations`, используется первая).
+   По сигналу загрузчика `MainWindow` создаётся на главном потоке
+   и живёт до завершения цикла событий.
 3. `MainWindow` показывает список товаров с фильтром, выбор формата этикетки
    и шаблона; по кнопке печати в фоновом потоке:
    - `manager.request_label(product, organization, template)` — PDF-этикетка

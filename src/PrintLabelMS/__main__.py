@@ -61,6 +61,9 @@ def _run_gui(settings_path):
     splash = gui.splash_screen.get_splash_screen()
     splash.show()
     exit_code = 0
+    # Окно обязано пережить возврат из слота on_loaded: иначе PyQt удалит его
+    # (нет parent'а и внешних ссылок), quitOnLastWindowClosed завершит app.exec().
+    refs = {"window": None}
 
     def on_loaded(bundle):
         nonlocal exit_code
@@ -71,6 +74,7 @@ def _run_gui(settings_path):
             print_handler = PrintHandler(config_model.printer.name, config_model.printer.resolution, converter)
             window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates,
                                 organization, check_updates=config_model.check_updates)
+            refs["window"] = window
             window.show()
         except Exception as e:
             gui.message_box.fatal_error(str(e))
