@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from enum import StrEnum
+from pathlib import Path
 
 from pydantic import BaseModel, Field
 
@@ -35,6 +36,7 @@ class Config(BaseModel):
 
 
 def read_config(file_path):
+    file_path = Path(file_path)
     with open(file_path, encoding="utf-8") as config_file:
         raw = json.load(config_file)
     migrated = migrate(raw)
@@ -42,7 +44,7 @@ def read_config(file_path):
         backup_path = "{}.bak-{}".format(file_path, datetime.now().strftime("%Y%m%d-%H%M%S"))
         with open(backup_path, "w", encoding="utf-8") as backup_file:
             json.dump(raw, backup_file, indent=2)
-        tmp_path = file_path + ".tmp"
+        tmp_path = file_path.parent / (file_path.name + ".tmp")
         with open(tmp_path, "w", encoding="utf-8") as config_file:
             json.dump(migrated, config_file, indent=2)
         os.replace(tmp_path, file_path)

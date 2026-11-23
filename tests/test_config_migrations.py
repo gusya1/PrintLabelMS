@@ -73,3 +73,13 @@ def test_check_updates_default_true(tmp_path):
     _write_old_config(config_file)
     cfg = config.read_config(str(config_file))
     assert cfg.check_updates is True
+
+
+def test_read_config_accepts_path_object(tmp_path):
+    config_file = tmp_path / "settings.json"
+    _write_old_config(config_file)
+    cfg = config.read_config(config_file)
+    assert isinstance(cfg, Config)
+    assert cfg.schema_version == 2
+    data = json.loads(config_file.read_text(encoding="utf-8"))
+    assert "poppler_path" not in data
