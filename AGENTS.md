@@ -38,7 +38,8 @@ src-layout:
 - `src/PrintLabelMS/__main__.py` — точка входа: main(), argparse, --version, подкоманды update/rollback,
   запуск GUI с ленивым импортом Qt;
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
-  `PrintHandler` (размер/ориентация/смещения/копии, print_pdf: JPEG → QPixmap → QPrinter);
+  `PrintHandler` (размер/ориентация/смещения/копии, print_pdf: JPEG → QPixmap → QPrinter,
+  print_calibration: рамка с диагоналями по F9);
 - `src/config/__init__.py` — pydantic-модели Config/PrinterConfig/LabelFormat/Orientation
   и read_config (settings.json);
 - `src/config/migrations.py` — CURRENT_SCHEMA_VERSION и MIGRATIONS (N → N+1), migrate(raw);

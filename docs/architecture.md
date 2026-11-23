@@ -30,6 +30,8 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
    - `PrintHandler.print_pdf(jpeg_data)` — QPixmap → QPrinter: размер страницы
      по выбранному формату, ориентация, смещения (мм → пиксели по разрешению),
      число копий.
+   По `F9` печатается калибровочный эталон текущего формата (рамка с
+   диагоналями, одна копия) — без запроса к МойСкладу и выбора шаблона.
 4. Ошибки МойСклада/сети/конвертации показываются диалогами (`message_box`,
    `QMessageBox`); прогресс — `QProgressDialog`.
 
@@ -90,7 +92,8 @@ PrintLabelMS — PyQt5-приложение для печати этикеток
   `loaded(object)` (конфиг, менеджер, ассортимент, шаблоны, организация)
   и `error(str)`.
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
-  `PrintHandler`; контракт печати: PDF → JPEG → QPixmap → QPrinter.
+  `PrintHandler`; контракт печати: PDF → JPEG → QPixmap → QPrinter;
+  калибровочный эталон формата — `print_calibration`.
 - `src/updater/paths.py` — XDG-пути установки (versions/current/previous,
   конфиг, лог, кэш).
 - `src/updater/release.py` — GitHub Releases: `fetch_latest_release`,

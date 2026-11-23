@@ -1,10 +1,13 @@
-from PyQt5.QtCore import QByteArray, QSizeF
-from PyQt5.QtGui import QPixmap, QPainter
+from PyQt5.QtCore import QByteArray, QSizeF, Qt
+from PyQt5.QtGui import QPixmap, QPainter, QPen
 from PyQt5.QtPrintSupport import QPrinterInfo, QPrinter
 
 from pdf_to_image_converter.converter import Converter, ConvertError
 
 import config
+
+
+CALIBRATION_LINE_WIDTH_MM = 0.3
 
 
 def init_printer(printer_name: str, resolution: int):
@@ -31,6 +34,20 @@ def mm_to_device_pixels(value_mm, resolution):
     из setResolution; 1 дюйм = 25.4 мм.
     """
     return round(value_mm * resolution / 25.4)
+
+
+def draw_calibration(painter, width_px, height_px, line_width_px):
+    """
+    Калибровочный эталон: рамка по границам устройства и две диагонали.
+
+    Линия толщиной line_width_px укладывается внутрь рамки, поэтому
+    отступ от краёв — line_width_px // 2.
+    """
+    inset = line_width_px // 2
+    painter.setPen(QPen(Qt.black, line_width_px))
+    painter.drawRect(inset, inset, width_px - 2 * inset, height_px - 2 * inset)
+    painter.drawLine(inset, inset, width_px - inset, height_px - inset)
+    painter.drawLine(width_px - inset, inset, inset, height_px - inset)
 
 
 class PrintHandler:
@@ -73,3 +90,18 @@ class PrintHandler:
 
         except ConvertError as e:
             raise RuntimeError(str(e))
+
+    def print_calibration(self, width_mm, height_mm):
+        """Печатает калибровочный эталон текущего формата этикетки."""
+        width_px = mm_to_device_pixels(width_mm, self.__resolution)
+        height_px = mm_to_device_pixels(height_mm, self.__resolution)
+        line_width_px = max(1, mm_to_device_pixels(CALIBRATION_LINE_WIDTH_MM, self.__resolution))
+
+        painter = QPainter()
+        if not painter.begin(self.__printer):
+            raise RuntimeError("Не удалось инициализировать принтер для печати")
+        try:
+            painter.translate(self.__width_offset, self.__height_offset)
+            draw_calibration(painter, width_px, height_px, line_width_px)
+        finally:
+            painter.end()

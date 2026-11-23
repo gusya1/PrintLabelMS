@@ -53,6 +53,8 @@ class MainWindow(QMainWindow):
 
         self.ui.btnPrint.clicked.connect(self.__onBtnPrint_clicked)
         self.ui.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
+        self.__calibration_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F9"), self)
+        self.__calibration_shortcut.activated.connect(self.__onCalibrationShortcut)
         self.progress_changed.connect(self.__change_progress)
         self.error_expected.connect(self.__show_error_dialog)
 
@@ -68,17 +70,33 @@ class MainWindow(QMainWindow):
         self.__print_handler.set_orientation(label_format.orientation)
         self.__print_handler.set_copy_count(count)
 
+    def __current_label_format(self):
+        label_format = self.ui.comboLabelSize.currentData()
+        if label_format is None:
+            raise RuntimeError("Формат этикетки не выбран")
+        return label_format
+
     def __collect_print_params(self):
         product_items = self.ui.listProducts.selectedItems()
         if len(product_items) == 0:
             raise RuntimeError("Продукт не выбран")
         product = self.__assortment[self.ui.listProducts.row(product_items[0])]
-        label_format = self.ui.comboLabelSize.currentData()
-        if label_format is None:
-            raise RuntimeError("Формат этикетки не выбран")
+        label_format = self.__current_label_format()
         template = self.ui.comboLabelFormat.currentData()
         count = self.ui.spinCount.value()
         return product, label_format, template, count
+
+    def __print_calibration(self, label_format):
+        try:
+            self.reset_print_settings(label_format, 1)
+            self.progress_changed.emit("Калибровка...", 1)
+            self.__print_handler.print_calibration(label_format.width, label_format.height)
+
+        except Exception as e:
+            self.error_expected.emit(str(e))
+            return
+
+        self.progress_changed.emit("Готово", 2)
 
     def __print_label(self, product, label_format, template, count):
         try:
@@ -117,6 +135,26 @@ class MainWindow(QMainWindow):
         self.progress_dialog = QProgressDialog("Печать...", None, 0, 3)
         self.progress_dialog.setAutoClose(True)
         thread = threading.Thread(target=self.__print_label, args=(product, label_format, template, count))
+        thread.start()
+        self.progress_dialog.exec_()
+        thread.join()
+        self.__printing = False
+
+    @QtCore.pyqtSlot()
+    def __onCalibrationShortcut(self):
+        if self.__printing:
+            QtWidgets.QMessageBox.warning(self, "Калибровка", "Идёт печать")
+            return
+        try:
+            label_format = self.__current_label_format()
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "Ошибка", str(e))
+            return
+
+        self.__printing = True
+        self.progress_dialog = QProgressDialog("Калибровка...", None, 0, 2)
+        self.progress_dialog.setAutoClose(True)
+        thread = threading.Thread(target=self.__print_calibration, args=(label_format,))
         thread.start()
         self.progress_dialog.exec_()
         thread.join()
