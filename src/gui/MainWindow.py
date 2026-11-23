@@ -1,3 +1,4 @@
+import importlib.metadata
 import sys
 import threading
 
@@ -10,6 +11,7 @@ from .ui.mainwindow_ui import Ui_MainWindow
 from gui.update_service import UpdateService
 
 from PrintLabelMS.print_handler import PrintHandler
+from updater.paths import APP_NAME
 
 
 def get_label_format_string(label_format):
@@ -59,7 +61,16 @@ class MainWindow(QMainWindow):
         self.__organization = organization
         self.__printing = False
         self.progress_dialog = None
+        self.__version_label = QtWidgets.QLabel(self._app_version_string())
+        self.statusBar().addWidget(self.__version_label)
         self.__setup_update_ui(check_updates)
+
+    @staticmethod
+    def _app_version_string():
+        try:
+            return "v{}".format(importlib.metadata.version(APP_NAME))
+        except importlib.metadata.PackageNotFoundError:
+            return "unknown"
 
     def reset_print_settings(self, label_format, count):
         self.__print_handler.set_page_size(label_format.width, label_format.height)
