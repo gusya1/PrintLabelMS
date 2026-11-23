@@ -23,6 +23,16 @@ def get_qt_orientation(orientation: config.Orientation):
     }[orientation]
 
 
+def mm_to_device_pixels(value_mm, resolution):
+    """
+    Миллиметры в device pixels при заданном разрешении принтера.
+
+    QPainter на QPrinter работает в точках (device pixels) при разрешении
+    из setResolution; 1 дюйм = 25.4 мм.
+    """
+    return round(value_mm * resolution / 25.4)
+
+
 class PrintHandler:
     def __init__(self, printer_name, resolution, converter: Converter):
         self.__width_offset = 0
@@ -32,10 +42,10 @@ class PrintHandler:
         self.converter = converter
 
     def set_width_offset(self, width_offset):
-        self.__width_offset = int(width_offset * self.__resolution / 1000)
+        self.__width_offset = mm_to_device_pixels(width_offset, self.__resolution)
 
     def set_height_offset(self, height_offset):
-        self.__height_offset = int(height_offset * self.__resolution / 1000)
+        self.__height_offset = mm_to_device_pixels(height_offset, self.__resolution)
 
     def set_page_size(self, width, height):
         self.__printer.setPageSizeMM(QSizeF(width, height))

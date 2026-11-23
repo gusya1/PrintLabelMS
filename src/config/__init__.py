@@ -17,8 +17,8 @@ class Orientation(StrEnum):
 class LabelFormat(BaseModel):
     width: int = Field(gt=0)
     height: int = Field(gt=0)
-    width_offset: int = Field(ge=0)
-    height_offset: int = Field(ge=0)
+    width_offset: int
+    height_offset: int
     orientation: Orientation
 
 

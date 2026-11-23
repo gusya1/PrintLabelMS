@@ -23,11 +23,12 @@ def test_label_format_zero_size_invalid():
         config.LabelFormat(width=0, height=40, width_offset=0, height_offset=0, orientation=config.Orientation.PORTRAIT)
 
 
-def test_label_format_negative_offset_invalid():
-    with pytest.raises(ValidationError):
-        config.LabelFormat(
-            width=58, height=40, width_offset=-1, height_offset=0, orientation=config.Orientation.PORTRAIT
-        )
+def test_label_format_negative_offset_valid():
+    label_format = config.LabelFormat(
+        width=58, height=40, width_offset=-1, height_offset=-2, orientation=config.Orientation.PORTRAIT
+    )
+    assert label_format.width_offset == -1
+    assert label_format.height_offset == -2
 
 
 def test_printer_config_zero_resolution_invalid():
