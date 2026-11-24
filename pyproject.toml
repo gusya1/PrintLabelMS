@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "printlabelms"
-version = "0.5.0"
+version = "0.6.0"
 description = "PyQt5-приложение: печать этикеток из МойСклада — ассортимент и шаблоны через moy_sklad, PDF→JPEG (pypdfium2), печать на термопринтере"
 readme = "README.md"
 requires-python = ">=3.12"
