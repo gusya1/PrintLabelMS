@@ -17,7 +17,7 @@ PDF-этикетка конвертируется в JPEG (pypdfium2 + Pillow) �
 - Перед запуском GUI сгенерировать UI из форм: `python src/gui/__build__.py`
   (папка `gui/ui/` в gitignore).
 - Токен МойСклада хранится только в settings.json (gitignored), не в коде, git и фикстурах.
-- Версия приложения 0.5.0; релиз — тег vX.Y.Z (CI публикует GitHub Release).
+- Версия приложения — в pyproject.toml; релиз — тег vX.Y.Z (CI публикует GitHub Release).
 
 ## 3. Документация
 - Документация проекта находится в docs/.
@@ -35,7 +35,7 @@ PDF-этикетка конвертируется в JPEG (pypdfium2 + Pillow) �
 
 ## 5. Карта проекта
 src-layout:
-- `src/PrintLabelMS/__main__.py` — точка входа: main(), argparse, --version, подкоманды update/rollback,
+- `src/PrintLabelMS/__main__.py` — точка входа: main(), argparse, --version, --kiosk, подкоманды update/rollback,
   запуск GUI с ленивым импортом Qt;
 - `src/PrintLabelMS/print_handler.py` — `init_printer`, `get_qt_orientation`,
   `PrintHandler` (размер/ориентация/смещения/копии, print_pdf: JPEG → QPixmap → QPrinter,
@@ -80,7 +80,7 @@ src-layout:
 - Репозиторий публичный: никаких токенов, реальных данных клиентов и внутренних URL в коде, доках и фикстурах; токен только в gitignored settings.json (пример — settings_example.json с заглушкой).
 
 ## 7. Версионирование
-- Версия в pyproject.toml; релиз — тег vX.Y.Z (текущий: v0.5.0): CI по тегу публикует GitHub Release с wheel, install.sh и SHA256SUMS.
+- Версия в pyproject.toml; релиз — тег vX.Y.Z: CI по тегу публикует GitHub Release с wheel, install.sh и SHA256SUMS.
 
 ## 8. Тестирование и проверка
 После изменения кода, строго по порядку:

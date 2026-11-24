@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PrintLabelMS.__main__ import _default_settings_path, main
 
 
@@ -22,6 +24,19 @@ def test_rollback_not_installed(capsys, monkeypatch, tmp_path):
     assert main(["rollback"]) != 0
     err = capsys.readouterr().err
     assert "не установлен" in err
+
+
+def test_kiosk_flag_passed_to_gui(monkeypatch):
+    calls = []
+
+    def fake_run_gui(settings_path, kiosk=False):
+        calls.append((settings_path, kiosk))
+        return 0
+
+    monkeypatch.setattr("PrintLabelMS.__main__._run_gui", fake_run_gui)
+    assert main(["settings.json", "--kiosk"]) == 0
+    assert main(["settings.json"]) == 0
+    assert calls == [(Path("settings.json"), True), (Path("settings.json"), False)]
 
 
 def test_default_settings_path_xdg(monkeypatch, tmp_path):

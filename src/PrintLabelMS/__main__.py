@@ -46,7 +46,7 @@ def _cmd_rollback(args):
         return 1
 
 
-def _run_gui(settings_path):
+def _run_gui(settings_path, kiosk=False):
     from PyQt5 import QtWidgets
 
     import gui.message_box
@@ -75,7 +75,10 @@ def _run_gui(settings_path):
             window = MainWindow(print_handler, manager, config_model.label_formats, assortment, templates,
                                 organization, check_updates=config_model.check_updates)
             refs["window"] = window
-            window.show()
+            if kiosk:
+                window.showFullScreen()
+            else:
+                window.show()
         except Exception as e:
             gui.message_box.fatal_error(str(e))
             exit_code = 1
@@ -112,11 +115,12 @@ def main(argv=None):
     parser.add_argument("settings", nargs="?", default=None,
                         help="Путь к settings.json (по умолчанию ~/.config/{}/settings.json)".format(APP_NAME))
     parser.add_argument("--version", action="store_true", help="Версии приложения и зависимостей")
+    parser.add_argument("--kiosk", action="store_true", help="Полноэкранный режим (F11 — переключение)")
     args = parser.parse_args(argv)
     if args.version:
         return _print_version()
     settings_path = Path(args.settings) if args.settings else _default_settings_path()
-    return _run_gui(settings_path)
+    return _run_gui(settings_path, kiosk=args.kiosk)
 
 
 if __name__ == "__main__":

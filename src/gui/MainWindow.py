@@ -1,4 +1,3 @@
-import sys
 import threading
 
 import resources
@@ -55,6 +54,8 @@ class MainWindow(QMainWindow):
         self.ui.lineFilter.textChanged.connect(self.__onLineFilter_textChanged)
         self.__calibration_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F9"), self)
         self.__calibration_shortcut.activated.connect(self.__onCalibrationShortcut)
+        self.__full_screen_shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F11"), self)
+        self.__full_screen_shortcut.activated.connect(self.__onFullScreenShortcut)
         self.progress_changed.connect(self.__change_progress)
         self.error_expected.connect(self.__show_error_dialog)
 
@@ -161,6 +162,13 @@ class MainWindow(QMainWindow):
         self.__printing = False
 
     @QtCore.pyqtSlot()
+    def __onFullScreenShortcut(self):
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
+
+    @QtCore.pyqtSlot()
     def __onLineFilter_textChanged(self):
         new_string = self.ui.lineFilter.text().lower()
         for i in range(self.ui.listProducts.count()):
@@ -207,5 +215,6 @@ class MainWindow(QMainWindow):
         if not success:
             self.error_expected.emit(message)
             return
-        QtCore.QProcess.startDetached(sys.executable, ["-m", "PrintLabelMS"])
-        self.close()
+        self.__update_button.setEnabled(False)
+        self.statusBar().showMessage("Обновление установлено — перезапустите приложение", 0)
+        QtWidgets.QMessageBox.information(self, "Обновление", "Обновление установлено. Перезапустите приложение.")
